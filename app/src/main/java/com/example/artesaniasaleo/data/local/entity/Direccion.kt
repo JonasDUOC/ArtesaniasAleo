@@ -1,8 +1,8 @@
 package com.example.artesaniasaleo.data.local.entity
 
-import androidx.room3.Entity
-import androidx.room3.ForeignKey
-import androidx.room3.PrimaryKey
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "direccion",
@@ -19,5 +19,6 @@ data class Direccion (
     val region: String,
     val comuna: String,
     val calle: String,
-    val numero: String
+    val numero: String,
+    val departamento: String
 )
