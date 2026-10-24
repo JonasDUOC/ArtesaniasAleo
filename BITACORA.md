@@ -27,7 +27,7 @@ com.example.artesaniasaleo
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ⬜ login/, registro/, catalogo/, detalle/, carrito/,
 │   │                        perfil/, admin/...
-│   ├── components/       ⬜ TarjetaProducto, CarruselImagenes...
+│   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
 │   └── utils/            ⬜ WindowSizeUtils.kt
 ├── navigation/           ⬜ rutas y NavHost
 └── MainActivity.kt
@@ -62,6 +62,8 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Lecturas con `Flow`, escrituras con `suspend` | La pantalla se actualiza sola cuando cambian los datos y la UI nunca se congela |
 | Paquete `data/local/relation` | Clases que juntan varias tablas en un resultado (ej.: producto con sus imágenes); no son tablas |
 | `dynamicColor = false` en el tema | Si no, Android 12+ usa los colores del fondo de pantalla e ignora la paleta del mockup |
+| Componentes sin estado propio (`valor` + `onValorChange`) | El dato vive en el ViewModel (MVVM); el componente solo lo muestra y avisa cambios |
+| Dependencia `material-icons-core` | Material 3 1.4.0 ya no incluye los íconos; core trae los básicos sin el peso de extended |
 
 ---
 
@@ -79,6 +81,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-24 — Componentes reutilizables (ui/components)
+**Autor:** Maxi · **Rama:** `feature/ui-components`
+
+- **Qué:** en `ui/components/` se crearon `Botones.kt` (`BotonPrincipal`, `BotonSecundario`), `CampoTexto.kt`, `CampoSelector.kt` (lista desplegable), `BarraSuperior.kt` y `TarjetaProducto.kt` (+ `formatearPrecio`), cada uno con `@Preview`. Se agregó `material-icons-core` en Gradle.
+- **Por qué:** las pantallas reutilizan las mismas piezas del mockup; reciben datos y eventos por parámetros, así el estado queda en el ViewModel.
+- **Conecta con:** usa `ui/theme`; lo usarán las pantallas de `ui/screens`.
+- **Pendiente:** la imagen de `TarjetaProducto` es un degradado provisional hasta tener la ruta real desde la BD.
 
 ### 2026-10-24 — Tema visual de la app (ui/theme)
 **Autor:** Maxi · **Rama:** `feature/ui-theme`
