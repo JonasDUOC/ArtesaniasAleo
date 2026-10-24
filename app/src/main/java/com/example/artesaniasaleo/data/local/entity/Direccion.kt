@@ -20,5 +20,5 @@ data class Direccion (
     val comuna: String,
     val calle: String,
     val numero: String,
-    val departamento: String
+    val departamento: String? = null
 )
