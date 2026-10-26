@@ -21,12 +21,12 @@ com.example.artesaniasaleo
 │       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
 │       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ⬜ UsuarioRepository, ProductoRepository...
-├── model/                ⬜ UiState, clases de errores, sealed class de estados
+├── model/                🔄 LoginUiState, RegistroUiState, Regiones (falta CatalogoUiState)
 ├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
-│   ├── screens/          ⬜ login/, registro/, catalogo/, detalle/, carrito/,
-│   │                        perfil/, admin/...
+│   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas);
+│   │                        faltan catalogo/, detalle/, carrito/, perfil/, admin/...
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
 │   └── utils/            ⬜ WindowSizeUtils.kt
 ├── navigation/           ⬜ rutas y NavHost
@@ -64,6 +64,10 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | `dynamicColor = false` en el tema | Si no, Android 12+ usa los colores del fondo de pantalla e ignora la paleta del mockup |
 | Componentes sin estado propio (`valor` + `onValorChange`) | El dato vive en el ViewModel (MVVM); el componente solo lo muestra y avisa cambios |
 | Dependencia `material-icons-core` | Material 3 1.4.0 ya no incluye los íconos; core trae los básicos sin el peso de extended |
+| Un `UiState` (`data class`) por pantalla en `model/` | La pantalla solo dibuja el estado; cambiarlo con `copy()` crea uno nuevo y Compose redibuja |
+| Registro en una sola pantalla con `pasoActual` | Los datos de la etapa 1 se necesitan al final para guardar el usuario; un solo estado no los pierde |
+| Regiones y comunas fijas en `model/Regiones.kt` | El MER las guarda como texto en `direccion`; no hay tabla. Selectores dependientes (CU-10) |
+| Calle y número en campos separados | Así están en la entidad `Direccion` de Jonas |
 
 ---
 
@@ -81,6 +85,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-25 — Estados de pantalla y pantallas de login y registro
+**Autor:** Maxi · **Ramas:** `feature/model`, `feature/pantalla-login`, `feature/pantalla-registro`
+
+- **Qué:** en `model/` se crearon `LoginUiState`, `RegistroUiState` (3 etapas, con `puedeEnviar` / `puedeContinuar` calculados) y `Regiones.kt`. En `ui/screens/` se crearon `PantallaLogin` y `PantallaRegistro` (etapas cuenta, código y datos), con `@Preview`.
+- **Por qué:** las pantallas no guardan datos: reciben un estado y avisan las acciones (MVVM). Las validaciones irán en el ViewModel.
+- **Conecta con:** usan `ui/components` y `ui/theme`; los ViewModel (con Jonas) entregarán el estado y guardarán en `Usuario`, `PerfilUsuario` y `Direccion`.
+- **Pendiente:** ViewModels, pantalla de términos, recuperar contraseña y navegación.
 
 ### 2026-10-24 — Componentes reutilizables (ui/components)
 **Autor:** Maxi · **Rama:** `feature/ui-components`
