@@ -24,6 +24,7 @@ data class RegistroUiState(
     val region: String? = null, // null = aún no elige
     val comuna: String? = null,
     val calle: String = "",
+    val numero: String = "",
     val departamento: String = "", // opcional
     val errorRut: String? = null,
     val errorNombres: String? = null,
@@ -31,6 +32,7 @@ data class RegistroUiState(
     val errorRegion: String? = null,
     val errorComuna: String? = null,
     val errorCalle: String? = null,
+    val errorNumero: String? = null,
 
     // General
     val errorGeneral: String? = null,
@@ -44,7 +46,7 @@ data class RegistroUiState(
                     confirmarContrasena.isNotBlank() && aceptaTerminos
             2 -> codigo.length == 4
             3 -> rut.isNotBlank() && nombres.isNotBlank() && apellido.isNotBlank() &&
-                    region != null && comuna != null && calle.isNotBlank()
+                    region != null && comuna != null && calle.isNotBlank() && numero.isNotBlank()
             else -> false
         }
 }
