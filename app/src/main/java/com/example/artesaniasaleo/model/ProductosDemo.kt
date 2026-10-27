@@ -52,3 +52,9 @@ val PEDIDOS_DEMO = listOf(
         lineas = listOf(LineaPedido("Anillo de plata", 1)), total = 15900, estado = EstadoPedido.ENVIADO
     )
 )
+
+val USUARIOS_DEMO = listOf(
+    UsuarioUi(id = 1, nombre = "Camila Torres"),
+    UsuarioUi(id = 2, nombre = "Pedro Ruiz"),
+    UsuarioUi(id = 3, nombre = "Alejandra R.", esAdmin = true)
+)

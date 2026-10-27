@@ -28,7 +28,7 @@ com.example.artesaniasaleo
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas),
 │   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
-│   │                        perfil/, seguimiento/, terminos/, recuperar/ ✅; falta admin/
+│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/ ✅
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
 │   └── utils/            ⬜ WindowSizeUtils.kt
@@ -88,6 +88,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Pantallas del administrador
+**Autor:** Maxi · **Rama:** `feature/pantallas-admin`
+
+- **Qué:** en `ui/screens/admin/`: Resumen (gráficos de barras), Notificaciones y detalle del pedido (cambia el estado a "En preparación" y "Enviado"), Gestión de contenido (categorías y productos con formularios) y Control de usuarios (bloquear y hacer administrador, con confirmación). Menú lateral según el rol.
+- **Por qué:** cubren los casos de uso del administrador del mockup. Demo: el correo `admin@aleyleo.cl` entra como administrador.
+- **Conecta con:** `EstadoDemo` (provisional) guarda los cambios en memoria; con Jonas pasan a `CategoriaDao`, `ProductoDao`, `PedidoDao` y `UsuarioDao`.
+- **Pendiente:** lectura de QR, ViewModels, imágenes reales de productos y datos reales del gráfico.
 
 ### 2026-10-27 — Pantallas del cliente y menú lateral
 **Autor:** Maxi · **Rama:** `feature/pantallas-cliente`

@@ -4,8 +4,12 @@ import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.DrawerValue
@@ -23,6 +27,14 @@ import androidx.navigation.navArgument
 import com.example.artesaniasaleo.model.RecuperarUiState
 import com.example.artesaniasaleo.ui.components.MenuLateral
 import com.example.artesaniasaleo.ui.components.OpcionMenu
+import com.example.artesaniasaleo.ui.screens.admin.PantallaEditarUsuario
+import com.example.artesaniasaleo.ui.screens.admin.PantallaFormCategoria
+import com.example.artesaniasaleo.ui.screens.admin.PantallaFormProducto
+import com.example.artesaniasaleo.ui.screens.admin.PantallaGestionContenido
+import com.example.artesaniasaleo.ui.screens.admin.PantallaNotificaciones
+import com.example.artesaniasaleo.ui.screens.admin.PantallaPedidoAdmin
+import com.example.artesaniasaleo.ui.screens.admin.PantallaResumen
+import com.example.artesaniasaleo.ui.screens.admin.PantallaUsuarios
 import com.example.artesaniasaleo.ui.screens.carrito.PantallaCarrito
 import com.example.artesaniasaleo.ui.screens.catalogo.PantallaCatalogo
 import com.example.artesaniasaleo.ui.screens.categorias.PantallaCategoria
@@ -52,13 +64,15 @@ fun AppNavegacion() {
     val aviso: (String) -> Unit = { Toast.makeText(contexto, it, Toast.LENGTH_SHORT).show() }
     val abrirMenu: () -> Unit = { alcance.launch { menu.open() } }
     val volver: () -> Unit = { navController.popBackStack() }
-    // Ícono de casa: vuelve al catálogo, que es la base del historial después del login
-    val irAInicio: () -> Unit = { navController.popBackStack(Rutas.CATALOGO, inclusive = false) }
-    // Opciones del menú: abren la pantalla dejando solo el catálogo debajo
+    // Pantalla base después del login: catálogo para el cliente, resumen para el administrador
+    val inicio = if (estado.esAdmin) Rutas.RESUMEN else Rutas.CATALOGO
+    // Ícono de casa: vuelve a la pantalla base del historial
+    val irAInicio: () -> Unit = { navController.popBackStack(inicio, inclusive = false) }
+    // Opciones del menú: abren la pantalla dejando solo la pantalla base debajo
     val irDesdeMenu: (String) -> Unit = { ruta ->
         alcance.launch { menu.close() }
         navController.navigate(ruta) {
-            popUpTo(Rutas.CATALOGO)
+            popUpTo(inicio)
             launchSingleTop = true // no abre dos veces la misma pantalla
         }
     }
@@ -68,12 +82,20 @@ fun AppNavegacion() {
         navController.navigate(Rutas.SEGUIMIENTO) { popUpTo(Rutas.CATALOGO) }
     }
 
-    val opcionesMenu = listOf(
+    // El menú cambia según el rol, como en el mockup
+    val opcionesRol = if (estado.esAdmin) listOf(
+        OpcionMenu("Resumen", Icons.Filled.DateRange, { irDesdeMenu(Rutas.RESUMEN) }),
+        OpcionMenu("Notificaciones", Icons.Filled.Notifications, { irDesdeMenu(Rutas.NOTIFICACIONES) }, estado.pedidosPendientes),
+        OpcionMenu("Gestión de contenido", Icons.Filled.Edit, { irDesdeMenu(Rutas.GESTION) }),
+        OpcionMenu("Control de usuarios", Icons.Filled.AccountCircle, { irDesdeMenu(Rutas.USUARIOS) })
+    ) else listOf(
         OpcionMenu("Perfil", Icons.Filled.Person, { irDesdeMenu(Rutas.PERFIL) }),
         OpcionMenu("Carrito", Icons.Filled.ShoppingCart, { irDesdeMenu(Rutas.CARRITO) }, estado.carrito.values.sum()),
         OpcionMenu("Favoritos", Icons.Filled.FavoriteBorder, { irDesdeMenu(Rutas.FAVORITOS) }),
         OpcionMenu("Categorías", Icons.AutoMirrored.Filled.List, { irDesdeMenu(Rutas.CATEGORIAS) }),
-        OpcionMenu("Seguimiento", Icons.Filled.LocationOn, { irDesdeMenu(Rutas.SEGUIMIENTO) }),
+        OpcionMenu("Seguimiento", Icons.Filled.LocationOn, { irDesdeMenu(Rutas.SEGUIMIENTO) })
+    )
+    val opcionesMenu = opcionesRol + listOf(
         OpcionMenu("Cerrar sesión", Icons.AutoMirrored.Filled.ExitToApp, {
             alcance.launch { menu.close() }
             estado.cerrarSesion()
@@ -97,8 +119,9 @@ fun AppNavegacion() {
                     onContrasenaChange = { estado.login = estado.login.copy(contrasena = it) },
                     onIniciarSesion = {
                         if (estado.validarLogin()) {
+                            val destino = if (estado.esAdmin) Rutas.RESUMEN else Rutas.CATALOGO
                             // popUpTo: saca el login del historial para que "atrás" no vuelva a él
-                            navController.navigate(Rutas.CATALOGO) { popUpTo(Rutas.LOGIN) { inclusive = true } }
+                            navController.navigate(destino) { popUpTo(Rutas.LOGIN) { inclusive = true } }
                         }
                     },
                     onCrearCuenta = { navController.navigate(Rutas.REGISTRO) },
@@ -258,6 +281,118 @@ fun AppNavegacion() {
                 val id = entrada.arguments?.getInt("id") ?: 0
                 val pedido = estado.pedidos.find { it.id == id } ?: return@composable
                 PantallaPedido(pedido = pedido, onVolver = volver, onMenu = abrirMenu)
+            }
+
+            // ---------- Administrador ----------
+
+            composable(Rutas.RESUMEN) {
+                PantallaResumen(
+                    pedidosPendientes = estado.pedidosPendientes,
+                    onPendientes = { navController.navigate(Rutas.NOTIFICACIONES) },
+                    onInicio = irAInicio,
+                    onMenu = abrirMenu
+                )
+            }
+
+            composable(Rutas.NOTIFICACIONES) {
+                PantallaNotificaciones(
+                    pedidos = estado.pedidos,
+                    onPedidoClick = { navController.navigate(Rutas.pedidoAdmin(it)) },
+                    onInicio = irAInicio,
+                    onMenu = abrirMenu
+                )
+            }
+
+            composable(Rutas.PEDIDO_ADMIN, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                val id = entrada.arguments?.getInt("id") ?: 0
+                val pedido = estado.pedidos.find { it.id == id } ?: return@composable
+                PantallaPedidoAdmin(
+                    pedido = pedido,
+                    onCambiarEstado = { nuevo ->
+                        estado.cambiarEstadoPedido(id, nuevo)
+                        aviso("Pedido #$id → ${nuevo.etiqueta}")
+                    },
+                    onVolver = volver,
+                    onMenu = abrirMenu
+                )
+            }
+
+            composable(Rutas.GESTION) {
+                PantallaGestionContenido(
+                    categorias = estado.categorias,
+                    productos = estado.catalogo.productos,
+                    onEditarCategoria = {
+                        estado.abrirFormCategoria(it)
+                        navController.navigate(Rutas.FORM_CATEGORIA)
+                    },
+                    onEliminarCategoria = { aviso(estado.eliminarCategoria(it)) },
+                    onEditarProducto = {
+                        estado.abrirFormProducto(it)
+                        navController.navigate(Rutas.FORM_PRODUCTO)
+                    },
+                    onEliminarProducto = {
+                        estado.eliminarProducto(it)
+                        aviso("Producto eliminado")
+                    },
+                    onInicio = irAInicio,
+                    onMenu = abrirMenu
+                )
+            }
+
+            composable(Rutas.FORM_CATEGORIA) {
+                PantallaFormCategoria(
+                    estado = estado.formCategoria,
+                    onNombreChange = { estado.formCategoria = estado.formCategoria.copy(nombre = it) },
+                    onGuardar = {
+                        if (estado.guardarCategoria()) {
+                            aviso("Categoría guardada")
+                            volver()
+                        }
+                    },
+                    onVolver = volver
+                )
+            }
+
+            composable(Rutas.FORM_PRODUCTO) {
+                PantallaFormProducto(
+                    estado = estado.formProducto,
+                    categorias = estado.categorias,
+                    onEstadoChange = { estado.formProducto = it },
+                    onGuardar = {
+                        if (estado.guardarProducto()) {
+                            aviso("Producto guardado")
+                            volver()
+                        }
+                    },
+                    onVolver = volver
+                )
+            }
+
+            composable(Rutas.USUARIOS) {
+                PantallaUsuarios(
+                    usuarios = estado.usuarios,
+                    onEditar = { navController.navigate(Rutas.editarUsuario(it)) },
+                    onInicio = irAInicio,
+                    onMenu = abrirMenu
+                )
+            }
+
+            composable(Rutas.EDITAR_USUARIO, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                val id = entrada.arguments?.getInt("id") ?: 0
+                val usuario = estado.usuario(id) ?: return@composable
+                PantallaEditarUsuario(
+                    usuario = usuario,
+                    onAlternarBloqueo = {
+                        aviso(if (usuario.bloqueado) "Cuenta de ${usuario.nombre} habilitada" else "Cuenta de ${usuario.nombre} bloqueada")
+                        estado.alternarBloqueo(id)
+                    },
+                    onHacerAdmin = {
+                        estado.hacerAdmin(id)
+                        aviso("${usuario.nombre} ahora es administrador")
+                    },
+                    onVolver = volver,
+                    onMenu = abrirMenu
+                )
             }
         }
     }
