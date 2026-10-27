@@ -89,6 +89,9 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | `ProductoUi` en `model/` en vez de usar las entidades en la UI | Junta lo que muestra la tarjeta (producto, imagen, favorito); la pantalla no depende de Room |
 | Un solo NavHost en `AppNavegacion` | Decide qué pantalla se ve; las pantallas no se conocen entre sí, solo avisan con callbacks |
 | `EstadoDemo` provisional (datos en memoria) | Permite probar las pantallas antes de los ViewModel; se reemplaza por ViewModel + Room |
+| Un solo `EstadoPedido` (enum en `model/`) | Una sola fuente de verdad; en la BD se guarda su `etiqueta` (texto), que coincide con el SQL y la entidad `Pedido` |
+| `lifecycle-viewmodel-compose` con la misma versión que `lifecycle-runtime-ktx` | Las librerías de lifecycle deben ir en la misma versión; `viewModel()` crea el ViewModel dentro de un Composable |
+| `material3-window-size-class` sin versión | La toma del Compose BOM; se usará en `WindowSizeUtils` (Guía 9) para la grilla adaptable |
 
 ---
 
@@ -106,6 +109,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Correcciones de la revisión y dependencias para ViewModel
+**Autor:** Jonas · **Rama:** `fix/revision`
+
+- **Qué:** la carpeta `data/local/relacion` se renombró a `relation` (coincide con su paquete). `PedidoRepository` usa el enum `EstadoPedido` de `model/` y se borró el `object` duplicado; `marcarEnPreparacion` y `marcarEnviado` pasan a `cambiarEstado(pedidoId, nuevo)`. Se agregaron `lifecycle-viewmodel-compose` y `material3-window-size-class`.
+- **Por qué:** evitar dos definiciones con el mismo nombre y dejar listas las dependencias para los ViewModel y la pantalla adaptable.
+- **Conecta con:** `cambiarEstado` lo usará el ViewModel del admin (la pantalla ya entrega un `EstadoPedido`); las dependencias, `AppNavegacion` y `ui/utils/WindowSizeUtils`.
+- **Pendiente:** decidir el campo `telefono` (está en `PerfilUiState` y `PedidoUi`, pero no en `PerfilUsuario` ni en el MER): agregarlo como opcional o quitarlo de las pantallas.
 
 ### 2026-10-27 — Integración de pantallas con la capa de datos
 **Autor:** Jonas · **Rama:** `integracion/pantallas`

@@ -58,5 +58,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.navigation.compose) //Se agrego
-
+    implementation(libs.androidx.lifecycle.viewmodel.compose) //Se agrego
+    implementation(libs.androidx.compose.material3.window.size) //Se agrego
 }
