@@ -21,14 +21,14 @@ com.example.artesaniasaleo
 │       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
 │       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ⬜ UsuarioRepository, ProductoRepository...
-├── model/                🔄 UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
+├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
 ├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
-│   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas),
+│   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
 │   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
-│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/ ✅
+│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
 │   └── utils/            ⬜ WindowSizeUtils.kt
