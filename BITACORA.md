@@ -21,15 +21,18 @@ com.example.artesaniasaleo
 │       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
 │       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ⬜ UsuarioRepository, ProductoRepository...
-├── model/                🔄 LoginUiState, RegistroUiState, Regiones, ProductoUi, CatalogoUiState, ProductosDemo
+├── model/                🔄 UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
+│                            DatosPagoUiState, PerfilUiState, ProductosDemo
 ├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas),
-│   │                        catalogo/ ✅ PantallaCatalogo; faltan detalle/, carrito/, perfil/, admin/...
-│   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
+│   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
+│   │                        perfil/, seguimiento/, terminos/, recuperar/ ✅; falta admin/
+│   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
+│   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
 │   └── utils/            ⬜ WindowSizeUtils.kt
-├── navigation/           🔄 Rutas, AppNavegacion (login → registro → catálogo)
+├── navigation/           🔄 Rutas, AppNavegacion (NavHost + menú lateral), EstadoDemo (provisional)
 └── MainActivity.kt
 ```
 
@@ -85,6 +88,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Pantallas del cliente y menú lateral
+**Autor:** Maxi · **Rama:** `feature/pantallas-cliente`
+
+- **Qué:** pantallas de términos, recuperar contraseña, detalle, categorías, favoritos, carrito, datos de pago, perfil (3 pestañas) y seguimiento de pedidos. Menú lateral (`ModalNavigationDrawer`) y componentes `GrillaProductos`, `FilaLista`, `FormularioPago`, `MenuLateral`. Rutas con argumento (`detalle/{id}`).
+- **Por qué:** cubren los casos de uso del cliente con el diseño del mockup. `FormularioPago` se reutiliza en el pago y en el perfil.
+- **Conecta con:** `EstadoDemo` guarda los datos en memoria y valida (correo, RUT, código 1234, tarjeta) solo mientras no existan los ViewModel; luego cada parte pasa a su ViewModel y a Room (con Jonas).
+- **Pendiente:** pantallas del administrador, lectura de QR y ViewModels.
 
 ### 2026-10-27 — Navegación entre pantallas
 **Autor:** Maxi · **Rama:** `feature/navegacion`
