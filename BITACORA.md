@@ -21,12 +21,12 @@ com.example.artesaniasaleo
 │       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
 │       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ⬜ UsuarioRepository, ProductoRepository...
-├── model/                🔄 LoginUiState, RegistroUiState, Regiones (falta CatalogoUiState)
+├── model/                🔄 LoginUiState, RegistroUiState, Regiones, ProductoUi, CatalogoUiState
 ├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
-│   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas);
-│   │                        faltan catalogo/, detalle/, carrito/, perfil/, admin/...
+│   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas),
+│   │                        catalogo/ ✅ PantallaCatalogo; faltan detalle/, carrito/, perfil/, admin/...
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
 │   └── utils/            ⬜ WindowSizeUtils.kt
 ├── navigation/           ⬜ rutas y NavHost
@@ -85,6 +85,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Pantalla de catálogo (Inicio)
+**Autor:** Maxi · **Rama:** `feature/pantalla-catalogo`
+
+- **Qué:** en `model/` se crearon `ProductoUi` y `CatalogoUiState` (con `productosFiltrados` calculado). En `ui/screens/catalogo/` se creó `PantallaCatalogo`: barra "Inicio", buscador "Buscar artesanías…", grilla de 2 columnas con `TarjetaProducto` y "Sin resultados", con `@Preview`.
+- **Por qué:** `ProductoUi` junta lo que muestra la tarjeta (datos de `Producto`, `ImagenProducto` y `Favorito`), así la pantalla no depende de las entidades de Room. La grilla es `LazyVerticalGrid` para dibujar solo lo visible.
+- **Conecta con:** el `CatalogoViewModel` (con Jonas) cargará los productos desde `ProductoRepository` y los convertirá a `ProductoUi`.
+- **Pendiente:** navegación, detalle de producto e imagen real de los productos.
 
 ### 2026-10-25 — Estados de pantalla y pantallas de login y registro
 **Autor:** Maxi · **Ramas:** `feature/model`, `feature/pantalla-login`, `feature/pantalla-registro`
