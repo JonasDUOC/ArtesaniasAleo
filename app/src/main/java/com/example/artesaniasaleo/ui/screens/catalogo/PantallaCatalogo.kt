@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.artesaniasaleo.model.CatalogoUiState
-import com.example.artesaniasaleo.model.ProductoUi
+import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
 import com.example.artesaniasaleo.ui.components.BarraSuperior
 import com.example.artesaniasaleo.ui.components.TarjetaProducto
 import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
@@ -123,14 +123,6 @@ private fun Centrado(contenido: @Composable () -> Unit) {
         contenido()
     }
 }
-
-// Productos del mockup, solo para las vistas previas
-private val PRODUCTOS_DEMO = listOf(
-    ProductoUi(id = 1, nombre = "Jarrón de greda", precio = 18500),
-    ProductoUi(id = 2, nombre = "Chal de lana", precio = 12000, esFavorito = true),
-    ProductoUi(id = 3, nombre = "Cuchara tallada", precio = 6500),
-    ProductoUi(id = 4, nombre = "Anillo de plata", precio = 15900)
-)
 
 @Preview(name = "Catálogo", showBackground = true)
 @Composable

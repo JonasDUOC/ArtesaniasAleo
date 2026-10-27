@@ -21,7 +21,7 @@ com.example.artesaniasaleo
 │       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
 │       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ⬜ UsuarioRepository, ProductoRepository...
-├── model/                🔄 LoginUiState, RegistroUiState, Regiones, ProductoUi, CatalogoUiState
+├── model/                🔄 LoginUiState, RegistroUiState, Regiones, ProductoUi, CatalogoUiState, ProductosDemo
 ├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
@@ -29,7 +29,7 @@ com.example.artesaniasaleo
 │   │                        catalogo/ ✅ PantallaCatalogo; faltan detalle/, carrito/, perfil/, admin/...
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
 │   └── utils/            ⬜ WindowSizeUtils.kt
-├── navigation/           ⬜ rutas y NavHost
+├── navigation/           🔄 Rutas, AppNavegacion (login → registro → catálogo)
 └── MainActivity.kt
 ```
 
@@ -85,6 +85,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Navegación entre pantallas
+**Autor:** Maxi · **Rama:** `feature/navegacion`
+
+- **Qué:** se agregó la dependencia Navigation Compose. En `navigation/` se crearon `Rutas` (nombres de las pantallas) y `AppNavegacion` (NavHost: login → registro → catálogo). `MainActivity` ahora solo aplica el tema y llama a `AppNavegacion`. Los productos demo pasaron a `model/ProductosDemo.kt`.
+- **Por qué:** un solo NavHost decide qué pantalla se ve; las pantallas no se conocen entre sí, solo avisan con callbacks. `popUpTo` saca el login del historial al entrar al catálogo.
+- **Conecta con:** los estados en `AppNavegacion` son provisionales (`remember`); se reemplazan por los ViewModel (con Jonas).
+- **Pendiente:** rutas de términos, recuperar contraseña, detalle, carrito, perfil y admin.
 
 ### 2026-10-27 — Pantalla de catálogo (Inicio)
 **Autor:** Maxi · **Rama:** `feature/pantalla-catalogo`

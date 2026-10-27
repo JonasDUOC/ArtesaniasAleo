@@ -11,6 +11,7 @@ composeBom = "2026.02.01"
 room = "2.8.5" # se agrego
 ksp = "2.3.11" # se agrego
 datastore = "1.2.1" # se agrego
+navigationCompose = "2.9.0" # se agrego
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,6 +32,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" } # se agrego
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" } # se agrego
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" } # se agrego
 
 
 [plugins]
