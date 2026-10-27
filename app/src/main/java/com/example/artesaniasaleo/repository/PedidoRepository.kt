@@ -4,15 +4,10 @@ import com.example.artesaniasaleo.data.local.dao.PedidoDao
 import com.example.artesaniasaleo.data.local.dao.UsuarioDao
 import com.example.artesaniasaleo.data.local.entity.Pedido
 import com.example.artesaniasaleo.data.local.relation.PedidoConDetalles
+import com.example.artesaniasaleo.model.EstadoPedido
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.ZoneId
-
-object EstadoPedido {
-    const val CONFIRMACION_PAGO = "Confirmación de pago"
-    const val EN_PREPARACION = "En preparación"
-    const val ENVIADO = "Enviado"
-}
 
 class SinTarjetaException : Exception("Agrega una tarjeta para continuar con la compra")
 
@@ -37,11 +32,8 @@ class PedidoRepository(
 
     fun observarPendientes(): Flow<List<Pedido>> = pedidoDao.observarPendientes()
 
-    suspend fun marcarEnPreparacion(pedidoId: Int) =
-        pedidoDao.actualizarEstado(pedidoId, EstadoPedido.EN_PREPARACION)
-
-    suspend fun marcarEnviado(pedidoId: Int) =
-        pedidoDao.actualizarEstado(pedidoId, EstadoPedido.ENVIADO)
+    suspend fun cambiarEstado(pedidoId: Int, nuevo: EstadoPedido) =
+        pedidoDao.actualizarEstado(pedidoId, nuevo.etiqueta)
 
     fun observarVentasDeHoy(): Flow<Int> = pedidoDao.observarVentasDesde(inicioDelDia())
 
