@@ -22,15 +22,18 @@ com.example.artesaniasaleo
 │       └── datastore/    ✅ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ✅ UsuarioRepository, CategoriaRepository, ProductoRepository,
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
-├── model/                🔄 LoginUiState, RegistroUiState, Regiones (falta CatalogoUiState)
-├── viewmodel/            ⬜ LoginViewModel, RegistroViewModel  ← SIGUIENTE (Jonas y Maxi)
+├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
+│                            DatosPagoUiState, PerfilUiState, ProductosDemo
+├── viewmodel/            ⬜ LoginViewModel, RegistroViewModel, CatalogoViewModel...  ← SIGUIENTE
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
-│   ├── screens/          🔄 login/ ✅ PantallaLogin, registro/ ✅ PantallaRegistro (3 etapas);
-│   │                        faltan catalogo/, detalle/, carrito/, perfil/, admin/...
-│   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto
+│   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
+│   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
+│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
+│   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
+│   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
 │   └── utils/            ⬜ WindowSizeUtils.kt
-├── navigation/           ⬜ rutas y NavHost
+├── navigation/           🔄 Rutas, AppNavegacion (NavHost + menú lateral), EstadoDemo (provisional)
 └── MainActivity.kt
 ```
 
@@ -83,6 +86,9 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Fotos copiadas a `filesDir/productos/` con nombre único (UUID) | La imagen de la galería podría borrarse; la copia queda dentro de la app |
 | Producto con ventas → `inactivo`; sin ventas → se borra con sus fotos | Se conserva el historial de pedidos sin dejar archivos huérfanos |
 | `EstadoPedido` centraliza los textos de estado | Deben coincidir exactamente (tilde incluida) con el SQL y la entidad `Pedido` |
+| `ProductoUi` en `model/` en vez de usar las entidades en la UI | Junta lo que muestra la tarjeta (producto, imagen, favorito); la pantalla no depende de Room |
+| Un solo NavHost en `AppNavegacion` | Decide qué pantalla se ve; las pantallas no se conocen entre sí, solo avisan con callbacks |
+| `EstadoDemo` provisional (datos en memoria) | Permite probar las pantallas antes de los ViewModel; se reemplaza por ViewModel + Room |
 
 ---
 
@@ -100,6 +106,46 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Integración de pantallas con la capa de datos
+**Autor:** Jonas · **Rama:** `integracion/pantallas`
+
+- **Qué:** se juntó `main` (base de datos, sesión y repositories) con `feature/pantallas-admin`, que contiene catálogo, navegación, pantallas de cliente y pantallas de admin. El único conflicto fue esta bitácora; se conservaron las entradas de ambos.
+- **Por qué:** las 4 ramas de UI se crearon una tras otra desde una versión anterior a la base de datos; integrarlas en una sola rama evita resolver el mismo conflicto cuatro veces.
+- **Conecta con:** deja en `main` la UI completa y la capa de datos juntas, listas para los ViewModel.
+- **Pendiente:** crear las ramas nuevas siempre desde `main` actualizado.
+
+### 2026-10-27 — Pantallas del administrador
+**Autor:** Maxi · **Rama:** `feature/pantallas-admin`
+
+- **Qué:** en `ui/screens/admin/`: Resumen (gráficos de barras), Notificaciones y detalle del pedido (cambia el estado a "En preparación" y "Enviado"), Gestión de contenido (categorías y productos con formularios) y Control de usuarios (bloquear y hacer administrador, con confirmación). Menú lateral según el rol.
+- **Por qué:** cubren los casos de uso del administrador del mockup. Demo: el correo `admin@aleyleo.cl` entra como administrador.
+- **Conecta con:** `EstadoDemo` (provisional) guarda los cambios en memoria; con Jonas pasan a `CategoriaDao`, `ProductoDao`, `PedidoDao` y `UsuarioDao`.
+- **Pendiente:** lectura de QR, ViewModels, imágenes reales de productos y datos reales del gráfico.
+
+### 2026-10-27 — Pantallas del cliente y menú lateral
+**Autor:** Maxi · **Rama:** `feature/pantallas-cliente`
+
+- **Qué:** pantallas de términos, recuperar contraseña, detalle, categorías, favoritos, carrito, datos de pago, perfil (3 pestañas) y seguimiento de pedidos. Menú lateral (`ModalNavigationDrawer`) y componentes `GrillaProductos`, `FilaLista`, `FormularioPago`, `MenuLateral`. Rutas con argumento (`detalle/{id}`).
+- **Por qué:** cubren los casos de uso del cliente con el diseño del mockup. `FormularioPago` se reutiliza en el pago y en el perfil.
+- **Conecta con:** `EstadoDemo` guarda los datos en memoria y valida (correo, RUT, código 1234, tarjeta) solo mientras no existan los ViewModel; luego cada parte pasa a su ViewModel y a Room (con Jonas).
+- **Pendiente:** pantallas del administrador, lectura de QR y ViewModels.
+
+### 2026-10-27 — Navegación entre pantallas
+**Autor:** Maxi · **Rama:** `feature/navegacion`
+
+- **Qué:** se agregó la dependencia Navigation Compose. En `navigation/` se crearon `Rutas` (nombres de las pantallas) y `AppNavegacion` (NavHost: login → registro → catálogo). `MainActivity` ahora solo aplica el tema y llama a `AppNavegacion`. Los productos demo pasaron a `model/ProductosDemo.kt`.
+- **Por qué:** un solo NavHost decide qué pantalla se ve; las pantallas no se conocen entre sí, solo avisan con callbacks. `popUpTo` saca el login del historial al entrar al catálogo.
+- **Conecta con:** los estados en `AppNavegacion` son provisionales (`remember`); se reemplazan por los ViewModel (con Jonas).
+- **Pendiente:** rutas de términos, recuperar contraseña, detalle, carrito, perfil y admin.
+
+### 2026-10-27 — Pantalla de catálogo (Inicio)
+**Autor:** Maxi · **Rama:** `feature/pantalla-catalogo`
+
+- **Qué:** en `model/` se crearon `ProductoUi` y `CatalogoUiState` (con `productosFiltrados` calculado). En `ui/screens/catalogo/` se creó `PantallaCatalogo`: barra "Inicio", buscador "Buscar artesanías…", grilla de 2 columnas con `TarjetaProducto` y "Sin resultados", con `@Preview`.
+- **Por qué:** `ProductoUi` junta lo que muestra la tarjeta (datos de `Producto`, `ImagenProducto` y `Favorito`), así la pantalla no depende de las entidades de Room. La grilla es `LazyVerticalGrid` para dibujar solo lo visible.
+- **Conecta con:** el `CatalogoViewModel` (con Jonas) cargará los productos desde `ProductoRepository` y los convertirá a `ProductoUi`.
+- **Pendiente:** navegación, detalle de producto e imagen real de los productos.
 
 ### 2026-10-26 — Sesión (DataStore) y repositories
 **Autor:** Jonas · **Rama:** `feature/sesion-repository`
