@@ -13,17 +13,18 @@ com.example.artesaniasaleo
 │       ├── entity/       ✅ Usuario, PerfilUsuario, Direccion, Tarjeta, Categoria,
 │       │                    Producto, ImagenProducto, CarritoItem, Favorito,
 │       │                    Pedido, PedidoDetalle
-│       ├── relation/     🔄 ProductoConImagenes, CarritoItemConProducto,
+│       ├── relation/     ✅ ProductoConImagenes, CarritoItemConProducto,
 │       │                    DetalleConProducto, PedidoConDetalles
-│       ├── dao/          🔄 UsuarioDao, CategoriaDao, ProductoDao, CarritoDao,
+│       ├── dao/          ✅ UsuarioDao, CategoriaDao, ProductoDao, CarritoDao,
 │       │                    FavoritoDao, PedidoDao
-│       ├── database/     ⬜ AppDatabase.kt (registra entidades y DAOs,
-│       │                    crea la cuenta admin al primer inicio)  ← SIGUIENTE
-│       └── datastore/    ⬜ SesionDataStore.kt (guarda quién inició sesión)
-├── repository/           ⬜ UsuarioRepository, ProductoRepository...
+│       ├── database/     ✅ AppDatabase.kt (registra entidades y DAOs,
+│       │                    crea la cuenta admin al primer inicio)
+│       └── datastore/    ✅ SesionDataStore.kt (guarda quién inició sesión)
+├── repository/           ✅ UsuarioRepository, CategoriaRepository, ProductoRepository,
+│                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
-├── viewmodel/            ⬜ LoginViewModel, CatalogoViewModel, CarritoViewModel...
+├── viewmodel/            ⬜ LoginViewModel, RegistroViewModel, CatalogoViewModel...  ← SIGUIENTE
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
@@ -41,6 +42,8 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 **Flujo:** Pantalla → ViewModel → Repository → DAO → Room, y de vuelta con Flow → StateFlow → la pantalla se actualiza. Las pantallas nunca tocan el DAO directamente.
 
 **Plan:** construir de abajo hacia arriba y terminar primero **registro + login** completos antes del resto.
+
+**Cuenta admin de prueba:** `admin@aleyleo.cl` / `admin123` (se crea sola al instalar la app).
 
 ---
 
@@ -71,6 +74,21 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Registro en una sola pantalla con `pasoActual` | Los datos de la etapa 1 se necesitan al final para guardar el usuario; un solo estado no los pierde |
 | Regiones y comunas fijas en `model/Regiones.kt` | El MER las guarda como texto en `direccion`; no hay tabla. Selectores dependientes (CU-10) |
 | Calle y número en campos separados | Así están en la entidad `Direccion` de Jonas |
+| `AppDatabase` como singleton (`getDatabase`) | Abrir la base es costoso; una sola instancia evita conexiones duplicadas al mismo archivo |
+| Cuenta admin creada en `Callback.onCreate` | Se ejecuta una sola vez, al crear la base; así la cuenta existe desde el primer inicio (cuenta preexistente) |
+| `fallbackToDestructiveMigration` (solo desarrollo) | Si cambia una entidad y se sube `version`, la base se recrea en vez de fallar; en producción se usarían migraciones |
+| Gradle JVM en 21 | Es el JDK que trae Android Studio; con 25 Gradle tomaba el JRE de VS Code, que no sirve para compilar |
+| DataStore guarda solo el `id` del usuario | El rol y el estado se leen siempre desde Room; si el admin los cambia, la app se entera sola |
+| Sesión dentro de `UsuarioRepository` | Login, registro y cerrar sesión siempre usan Room y DataStore juntos |
+| Repository lanza excepciones con el mensaje del caso de uso | El repository decide qué está mal; el ViewModel lo atrapa (`try/catch`) y lo muestra como `Error` |
+| `SinTarjetaException` en la compra | Excepción propia para que el ViewModel redirija a "Agregar tarjeta" en vez de mostrar un error |
+| Correos guardados sin espacios y en minúsculas | `Ana@Mail.com` y `ana@mail.com` son la misma cuenta |
+| Fotos copiadas a `filesDir/productos/` con nombre único (UUID) | La imagen de la galería podría borrarse; la copia queda dentro de la app |
+| Producto con ventas → `inactivo`; sin ventas → se borra con sus fotos | Se conserva el historial de pedidos sin dejar archivos huérfanos |
+| `EstadoPedido` centraliza los textos de estado | Deben coincidir exactamente (tilde incluida) con el SQL y la entidad `Pedido` |
+| `ProductoUi` en `model/` en vez de usar las entidades en la UI | Junta lo que muestra la tarjeta (producto, imagen, favorito); la pantalla no depende de Room |
+| Un solo NavHost en `AppNavegacion` | Decide qué pantalla se ve; las pantallas no se conocen entre sí, solo avisan con callbacks |
+| `EstadoDemo` provisional (datos en memoria) | Permite probar las pantallas antes de los ViewModel; se reemplaza por ViewModel + Room |
 
 ---
 
@@ -88,6 +106,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Integración de pantallas con la capa de datos
+**Autor:** Jonas · **Rama:** `integracion/pantallas`
+
+- **Qué:** se juntó `main` (base de datos, sesión y repositories) con `feature/pantallas-admin`, que contiene catálogo, navegación, pantallas de cliente y pantallas de admin. El único conflicto fue esta bitácora; se conservaron las entradas de ambos.
+- **Por qué:** las 4 ramas de UI se crearon una tras otra desde una versión anterior a la base de datos; integrarlas en una sola rama evita resolver el mismo conflicto cuatro veces.
+- **Conecta con:** deja en `main` la UI completa y la capa de datos juntas, listas para los ViewModel.
+- **Pendiente:** crear las ramas nuevas siempre desde `main` actualizado.
 
 ### 2026-10-27 — Pantallas del administrador
 **Autor:** Maxi · **Rama:** `feature/pantallas-admin`
@@ -121,6 +147,22 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 - **Conecta con:** el `CatalogoViewModel` (con Jonas) cargará los productos desde `ProductoRepository` y los convertirá a `ProductoUi`.
 - **Pendiente:** navegación, detalle de producto e imagen real de los productos.
 
+### 2026-10-26 — Sesión (DataStore) y repositories
+**Autor:** Jonas · **Rama:** `feature/sesion-repository`
+
+- **Qué:** en `data/local/datastore/` se creó `SesionDataStore` (guarda el id del usuario con sesión; lo expone como `Flow`). En `repository/` se crearon 6 repositories: Usuario (login, registro, sesión, perfil, control de usuarios), Categoria, Producto (copia las fotos a la app), Carrito, Favorito y Pedido (compra, estados, ventas del día).
+- **Por qué:** el repository junta las fuentes de datos de cada funcionalidad y aplica las reglas de los casos de uso (ej.: CU-05 cuenta inexistente / contraseña incorrecta / bloqueada). Los ViewModel solo llaman al repository y nunca tocan los DAO.
+- **Conecta con:** usa los DAO, `AppDatabase` y `SesionDataStore`; lo usarán los ViewModel.
+- **Pendiente:** crear los ViewModel (login y registro primero) y su `ViewModelProvider.Factory`. Falta agregar a CU-05 la excepción de cuenta bloqueada.
+
+### 2026-10-26 — Base de datos (AppDatabase)
+**Autor:** Jonas · **Rama:** `feature/database`
+
+- **Qué:** en `data/local/database/` se creó `AppDatabase`: registra las 11 entidades y los 6 DAOs, y es singleton (`getDatabase`). Al crearse por primera vez inserta la cuenta admin con su perfil. Gradle JVM quedó en 21.
+- **Por qué:** es el único punto de acceso a la base local. Al compilar, Room (KSP) validó todo el SQL de `dao/` y las clases de `relation/`; también quedó resuelto el `tableName` de `CarritoItem`.
+- **Conecta con:** la usarán los repository para obtener los DAO.
+- **Pendiente:** ambos deben tener Gradle JVM en 21 (archivo `gradle/gradle-daemon-jvm.properties`). La lógica de los DAO se probará al usarlos en cada funcionalidad y con pruebas en la Unidad 3.
+
 ### 2026-10-25 — Estados de pantalla y pantallas de login y registro
 **Autor:** Maxi · **Ramas:** `feature/model`, `feature/pantalla-login`, `feature/pantalla-registro`
 
@@ -146,7 +188,7 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 - **Pendiente:** el `Button` de Material 3 no toma las formas del tema; se resuelve con `BotonPrincipal` en `ui/components`.
 
 ### 2026-10-24 — Dependencias de Room y DAOs
-**Autor:** Jonas · **Rama:** `[rama]`
+**Autor:** Jonas · **Rama:** `jonas`
 
 - **Qué:** Gradle con Room 2.8.5, KSP 2.3.11 y DataStore 1.2.1 (`libs.versions.toml` y ambos `build.gradle.kts`); imports de las entidades cambiados de `androidx.room3` a `androidx.room`. Se crearon 6 DAOs en `data/local/dao/` (Usuario, Categoria, Producto, Carrito, Favorito, Pedido) y 4 clases en `data/local/relation/`. `Direccion` suma el campo `departamento`.
 - **Por qué:** KSP genera la implementación de los DAO al compilar. El registro (usuario + perfil + dirección) y la compra (pedido + detalle + vaciar carrito) usan `@Transaction` para guardar todo o nada.
