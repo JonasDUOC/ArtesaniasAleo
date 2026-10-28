@@ -14,16 +14,17 @@ com.example.artesaniasaleo
 │       │                    Producto, ImagenProducto, CarritoItem, Favorito,
 │       │                    Pedido, PedidoDetalle
 │       ├── relation/     ✅ ProductoConImagenes, CarritoItemConProducto,
-│       │                    DetalleConProducto, PedidoConDetalles
+│       │                    DetalleConProducto, PedidoConDetalles, UsuarioConPerfil
 │       ├── dao/          ✅ UsuarioDao, CategoriaDao, ProductoDao, CarritoDao,
 │       │                    FavoritoDao, PedidoDao
-│       ├── database/     ✅ AppDatabase.kt (registra entidades y DAOs,
-│       │                    crea la cuenta admin al primer inicio)
+│       ├── database/     ✅ AppDatabase.kt (versión 2; registra entidades y DAOs;
+│       │                    datos semilla: admin, cliente Ana, 4 categorías, 8 productos)
 │       └── datastore/    ✅ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ✅ UsuarioRepository, CategoriaRepository, ProductoRepository,
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
-│                            DatosPagoUiState, PerfilUiState, ProductosDemo
+│                            DatosPagoUiState, PerfilUiState, EstadoOperacion, EstadoSesion,
+│                            EstadoCompra (sealed class), ProductosDemo (solo para @Preview)
 ├── viewmodel/            ✅ Factory, Sesion, Login, Registro, Catalogo, Carrito, Perfil, Pedidos, Admin, Recuperar + Mapeos.kt
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
@@ -31,7 +32,8 @@ com.example.artesaniasaleo
 │   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
 │   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
-│   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
+│   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral,
+│   │                        PantallaCarga, ImagenArtesania, SelectorImagenes (galería y cámara)
 │   └── utils/            ✅ Validaciones.kt (correo, RUT, tarjeta), WindowSizeUtils.kt
 ├── navigation/           ✅ Rutas, AppNavegacion (NavHost + menú lateral). EstadoDemo eliminado
 └── MainActivity.kt
@@ -105,7 +107,7 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | `combine` de productos + favoritos + categorías | Cualquier cambio en Room (favorito, producto, categoría) recalcula el estado y redibuja todas las pantallas |
 | Búsqueda en su propio `StateFlow` | El TextField se actualiza al instante; el filtrado se calcula en `CatalogoUiState` |
 | `EstadoCompra` (sealed) propio para la compra | Además de éxito/error tiene el caso `SinTarjeta`, que redirige a datos de pago (CU-24) |
-| `telefono` en `PerfilUsuario` (BD versión 2) | CU-09 lo pide editable; se agrega como opcional. Actualizar el MER |
+| `telefono` en `PerfilUsuario` (BD versión 2) | CU-09 lo pide editable; se agrega como opcional. Se decidió no modificar el MER: se explica en la presentación |
 | Datos semilla con `INSERT OR IGNORE` y `onDestructiveMigration` | Al subir la versión Room recrea las tablas sin llamar a `onCreate`; así los datos se insertan igual y nunca se duplican |
 | Imágenes con `BitmapFactory` reducido (sin librerías) | Fotos de cámara pesan MB; se cargan en segundo plano y achicadas. No agrega dependencias |
 | Menú del admin = opciones admin + las del cliente | CU-27: la interfaz del admin es la del cliente más el panel |
@@ -123,12 +125,21 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 - [ ] ¿`minSdk` 36 o 33? (en clases se dijo 36, las guías dicen API 33+; con 36 la app solo se instala en Android 16 o superior)
 - [ ] ¿Se acepta Room 2.8 (`androidx.room`) o se exige Room 3 (`androidx.room3`)?
 - [ ] Gráfico de "visitas" del panel admin: el MER no registra visitas. ¿Se agrega una tabla o se usa otra métrica?
+- [ ] ¿El repositorio de GitHub debe ser privado? (hoy es público)
 
 ---
 
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — Bitácora al día y cierre de la Unidad 2
+**Autor:** Jonas · **Rama:** `docs/bitacora`
+
+- **Qué:** "Estado por capa" incluye los archivos nuevos (`UsuarioConPerfil`, `EstadoOperacion`/`EstadoSesion`/`EstadoCompra`, `PantallaCarga`, `ImagenArtesania`, `SelectorImagenes`) y los datos semilla. Se registra la decisión sobre `telefono` y una pregunta nueva para el profesor.
+- **Por qué:** dejar la bitácora coherente con `main` (PR #17) antes de la presentación. Todas las pantallas usan Room; `EstadoDemo` ya no existe.
+- **Conecta con:** todo el proyecto; resume el cierre de los ViewModel (PR #12 a #17).
+- **Pendiente:** gráficos del resumen con datos de demo (el MER no registra visitas); fotos de cámara pueden verse giradas (no se lee EXIF); borrar en GitHub las ramas ya mergeadas. Decisiones que cierran pendientes anteriores: `telefono` no se agrega al MER; el vencimiento de la tarjeta queda como texto `MM/AA`.
 
 ### 2026-10-28 — Recuperar contraseña, orden por precio y diseño adaptable
 **Autor:** Jonas · **Rama:** `feature/ajustes-finales`
