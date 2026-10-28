@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.artesaniasaleo.model.EstadoOperacion
 import com.example.artesaniasaleo.model.RegistroUiState
 import com.example.artesaniasaleo.model.REGIONES
 import com.example.artesaniasaleo.ui.components.CampoSelector
@@ -31,12 +32,16 @@ import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 @Composable
 fun PantallaRegistro(
     estado: RegistroUiState,
+    operacion: EstadoOperacion,                // Inactivo / Cargando / Exito / Error, viene del RegistroViewModel
     onEstadoChange: (RegistroUiState) -> Unit, // recibe el estado nuevo creado con copy()
     onContinuar: () -> Unit,                   // el ViewModel valida y avanza de etapa
     onVolver: () -> Unit,
     onVerTerminos: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val cargando = operacion is EstadoOperacion.Cargando || operacion is EstadoOperacion.Exito
+    val mensajeError = (operacion as? EstadoOperacion.Error)?.mensaje
+
     // Título y texto del botón cambian según la etapa (igual que en el mockup)
     val titulo = when (estado.pasoActual) {
         1 -> "Crear cuenta"
@@ -75,12 +80,22 @@ fun PantallaRegistro(
                 else -> PasoDatos(estado, onEstadoChange)
             }
 
+            // Error que no es de un campo (ej.: no se pudo guardar en la base de datos)
+            if (mensajeError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = mensajeError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             BotonPrincipal(
-                texto = if (estado.cargando) "Procesando..." else textoBoton,
+                texto = if (cargando) "Procesando..." else textoBoton,
                 onClick = onContinuar,
-                habilitado = estado.puedeContinuar
+                habilitado = estado.puedeContinuar && !cargando
             )
         }
     }
@@ -282,6 +297,7 @@ private fun VistaRegistroEtapa1() {
                 errorContrasena = "Debe tener al menos 6 caracteres",
                 errorTerminos = "Debes aceptar los términos para continuar"
             ),
+            operacion = EstadoOperacion.Inactivo,
             onEstadoChange = {},
             onContinuar = {},
             onVolver = {},
@@ -296,6 +312,7 @@ private fun VistaRegistroEtapa2() {
     ArtesaniasAleoTheme {
         PantallaRegistro(
             estado = RegistroUiState(pasoActual = 2, correo = "maxi@mail.com", codigo = "12"),
+            operacion = EstadoOperacion.Inactivo,
             onEstadoChange = {}, onContinuar = {}, onVolver = {}, onVerTerminos = {}
         )
     }
@@ -307,6 +324,7 @@ private fun VistaRegistroEtapa3() {
     ArtesaniasAleoTheme {
         PantallaRegistro(
             estado = RegistroUiState(pasoActual = 3, region = "Región del Biobío", errorRut = "RUT inválido (verifica el dígito verificador)"),
+            operacion = EstadoOperacion.Inactivo,
             onEstadoChange = {}, onContinuar = {}, onVolver = {}, onVerTerminos = {}
         )
     }

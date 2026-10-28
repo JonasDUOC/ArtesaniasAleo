@@ -32,16 +32,12 @@ data class RegistroUiState(
     val errorRegion: String? = null,
     val errorComuna: String? = null,
     val errorCalle: String? = null,
-    val errorNumero: String? = null,
-
-    // General
-    val errorGeneral: String? = null,
-    val cargando: Boolean = false,
-    val registroExitoso: Boolean = false
+    val errorNumero: String? = null
+    // Cómo va el proceso (cargando / error / éxito) está en EstadoOperacion
 ) {
     // Habilita "Continuar" solo si los campos obligatorios del paso actual están llenos
     val puedeContinuar: Boolean
-        get() = !cargando && when (pasoActual) {
+        get() = when (pasoActual) {
             1 -> correo.isNotBlank() && contrasena.isNotBlank() &&
                     confirmarContrasena.isNotBlank() && aceptaTerminos
             2 -> codigo.length == 4
