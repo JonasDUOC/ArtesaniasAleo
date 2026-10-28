@@ -3,11 +3,9 @@ package com.example.artesaniasaleo.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.artesaniasaleo.data.local.relation.ProductoConImagenes
 import com.example.artesaniasaleo.model.CatalogoUiState
 import com.example.artesaniasaleo.model.CategoriaUi
 import com.example.artesaniasaleo.model.EstadoOperacion
-import com.example.artesaniasaleo.model.ProductoUi
 import com.example.artesaniasaleo.repository.CategoriaRepository
 import com.example.artesaniasaleo.repository.FavoritoRepository
 import com.example.artesaniasaleo.repository.ProductoRepository
@@ -63,7 +61,7 @@ class CatalogoViewModel(
         categoriaRepository.observarTodas()
     ) { productos, favoritos, categorias ->
         CatalogoUiState(
-            productos = productos.map { it.aProductoUi(favoritos) },
+            productos = productos.map { it.aProductoUi(favoritos) }, // conversión en Mapeos.kt
             categorias = categorias.map { CategoriaUi(id = it.id, nombre = it.nombre) }
         )
     }
@@ -95,18 +93,6 @@ class CatalogoViewModel(
             }
         }
     }
-
-    // Función de extensión: "le agrega" a ProductoConImagenes una forma de convertirse en ProductoUi.
-    // Se usa como si fuera un método propio: producto.aProductoUi(favoritos)
-    private fun ProductoConImagenes.aProductoUi(favoritos: Set<Int>) = ProductoUi(
-        id = producto.id,
-        nombre = producto.titulo,
-        precio = producto.precio,
-        imagenUrl = imagenes.minByOrNull { it.orden }?.url, // primera imagen del carrusel
-        esFavorito = producto.id in favoritos,
-        descripcion = producto.descripcion,
-        categoriaId = producto.categoriaId
-    )
 
     private companion object {
         const val TAG = "CatalogoViewModel"

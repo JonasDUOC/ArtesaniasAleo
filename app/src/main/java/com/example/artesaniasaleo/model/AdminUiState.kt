@@ -1,5 +1,7 @@
 package com.example.artesaniasaleo.model
 
+import android.net.Uri
+
 // Usuario como lo ve el administrador en "Control de usuarios" (entidad Usuario + PerfilUsuario)
 data class UsuarioUi(
     val id: Int,
@@ -22,7 +24,10 @@ data class ProductoFormUiState(
     val descripcion: String = "",
     val precio: String = "",
     val categoriaId: Int? = null,
+    // Imágenes elegidas de la galería o tomadas con la cámara (Guía 13: el estado guarda Uri)
+    val imagenes: List<Uri> = emptyList(),
     val errorNombre: String? = null,
     val errorPrecio: String? = null,
-    val errorCategoria: String? = null
+    val errorCategoria: String? = null,
+    val errorImagenes: String? = null
 )

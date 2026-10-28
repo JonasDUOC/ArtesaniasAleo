@@ -6,6 +6,7 @@ data class ProductoUi(
     val nombre: String,             // Producto.titulo
     val precio: Int,                // pesos chilenos, sin decimales
     val imagenUrl: String? = null,  // ruta de la primera imagen; null = sin imagen
+    val imagenes: List<String> = emptyList(), // todas las rutas, en orden (carrusel del detalle)
     val esFavorito: Boolean = false,
     val descripcion: String = "",   // se muestra en el detalle
     val categoriaId: Int = 0        // para filtrar por categoría
