@@ -18,5 +18,7 @@ data class PerfilUsuario (
     val usuarioId: Int,
     val rut: String,
     val nombre: String,
-    val apellido: String
+    val apellido: String,
+    // CU-09: el cliente edita su teléfono en el perfil. No estaba en el MER (agregar allí también)
+    val telefono: String? = null
 )

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.example.artesaniasaleo.ui.components.BarraSuperior
 import com.example.artesaniasaleo.ui.components.Etiqueta
 import com.example.artesaniasaleo.ui.components.FilaLista
+import com.example.artesaniasaleo.ui.components.formatearPrecio
 import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 
 // Alturas de las barras del mockup (0 a 1). Son de ejemplo: no hay datos reales de visitas
@@ -35,7 +36,8 @@ fun PantallaResumen(
     onPendientes: () -> Unit,
     onInicio: () -> Unit,
     onMenu: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    ventasHoy: Int? = null // total vendido hoy desde Room; null = no se muestra
 ) {
     Scaffold(
         modifier = modifier,
@@ -49,6 +51,14 @@ fun PantallaResumen(
                 .padding(16.dp)
         ) {
             Text("Resumen del día", style = MaterialTheme.typography.titleLarge)
+            if (ventasHoy != null) {
+                Text(
+                    text = "Total vendido hoy: ${formatearPrecio(ventasHoy)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
             GraficoBarras("Visitas hoy", VISITAS)
             GraficoBarras("Ventas hoy", VENTAS)
             FilaLista(texto = "Pedidos pendientes", onClick = onPendientes) {

@@ -24,7 +24,7 @@ com.example.artesaniasaleo
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
-├── viewmodel/            🔄 Factory, Sesion, Login, Registro, Catalogo · ⬜ Carrito, Perfil, Pedidos, Admin, Recuperar  ← SIGUIENTE
+├── viewmodel/            ✅ Factory, Sesion, Login, Registro, Catalogo, Carrito, Perfil, Pedidos, Admin, Recuperar + Mapeos.kt
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
@@ -32,8 +32,8 @@ com.example.artesaniasaleo
 │   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
-│   └── utils/            🔄 Validaciones.kt (correo, RUT) · ⬜ WindowSizeUtils.kt
-├── navigation/           🔄 Rutas, AppNavegacion (NavHost + menú lateral), EstadoDemo (provisional)
+│   └── utils/            🔄 Validaciones.kt (correo, RUT, tarjeta) · ⬜ WindowSizeUtils.kt
+├── navigation/           ✅ Rutas, AppNavegacion (NavHost + menú lateral). EstadoDemo eliminado
 └── MainActivity.kt
 ```
 
@@ -104,6 +104,11 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | `CatalogoViewModel` compartido (fuera del NavHost) | Inicio, Detalle, Categorías y Favoritos usan la misma lista de Room (ViewModel compartido, Guía 11) |
 | `combine` de productos + favoritos + categorías | Cualquier cambio en Room (favorito, producto, categoría) recalcula el estado y redibuja todas las pantallas |
 | Búsqueda en su propio `StateFlow` | El TextField se actualiza al instante; el filtrado se calcula en `CatalogoUiState` |
+| `EstadoCompra` (sealed) propio para la compra | Además de éxito/error tiene el caso `SinTarjeta`, que redirige a datos de pago (CU-24) |
+| `telefono` en `PerfilUsuario` (BD versión 2) | CU-09 lo pide editable; se agrega como opcional. Actualizar el MER |
+| Datos semilla con `INSERT OR IGNORE` y `onDestructiveMigration` | Al subir la versión Room recrea las tablas sin llamar a `onCreate`; así los datos se insertan igual y nunca se duplican |
+| Imágenes con `BitmapFactory` reducido (sin librerías) | Fotos de cámara pesan MB; se cargan en segundo plano y achicadas. No agrega dependencias |
+| Menú del admin = opciones admin + las del cliente | CU-27: la interfaz del admin es la del cliente más el panel |
 | Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
 
 ---
@@ -122,6 +127,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — App completa con Room (todos los ViewModel)
+**Autor:** Jonas · **Rama:** `integracion/app-completa`
+
+- **Qué:** nuevos `CarritoViewModel` (carrito, datos de pago, compra con `EstadoCompra` y redirección si no hay tarjeta), `PerfilViewModel` (3 secciones Editar/Guardar), `PedidosViewModel` (seguimiento, notificaciones, estados, ventas de hoy), `AdminViewModel` (CRUD de categorías y productos con imágenes, control de usuarios) y `RecuperarViewModel`; conversiones en `viewmodel/Mapeos.kt`. Imágenes: `ImagenArtesania` y `SelectorImagenes` (galería `GetMultipleContents`, cámara `TakePicture` + permiso + `FileProvider`), carrusel `HorizontalPager` en el detalle. BD versión 2: `PerfilUsuario.telefono`, cliente demo Ana. Se eliminó `EstadoDemo`.
+- **Por qué:** todas las pantallas leen y escriben en Room; flujo completo cliente → compra → admin → seguimiento.
+- **Conecta con:** todos los repositories; `AndroidManifest` (permiso CAMERA, provider) y `res/xml/file_paths.xml`.
+- **Pendiente:** CU-07 sin etapa de nueva contraseña (falta UI); botón de orden descendente (CU-15); `WindowSizeUtils`; gráficos del resumen con datos reales; agregar `telefono` al MER.
 
 ### 2026-10-28 — Catálogo con Room (CatalogoViewModel)
 **Autor:** Jonas · **Rama:** `feature/catalogo-viewmodel`
