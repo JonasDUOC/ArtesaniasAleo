@@ -9,6 +9,7 @@ import com.example.artesaniasaleo.data.local.entity.Direccion
 import com.example.artesaniasaleo.data.local.entity.PerfilUsuario
 import com.example.artesaniasaleo.data.local.entity.Tarjeta
 import com.example.artesaniasaleo.data.local.entity.Usuario
+import com.example.artesaniasaleo.data.local.relation.UsuarioConPerfil
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -25,6 +26,15 @@ interface UsuarioDao {
 
     @Query("SELECT * FROM usuario ORDER BY fechaRegistro DESC")
     fun observarTodos(): Flow<List<Usuario>>
+
+    // Control de usuarios (CU-39): cada cuenta con su perfil, para mostrar el nombre
+    @Transaction
+    @Query("SELECT * FROM usuario ORDER BY fechaRegistro DESC")
+    fun observarTodosConPerfil(): Flow<List<UsuarioConPerfil>>
+
+    // CU-09: el cliente puede cambiar su correo desde el perfil
+    @Query("UPDATE usuario SET correo = :correo WHERE id = :id")
+    suspend fun actualizarCorreo(id: Int, correo: String)
 
     @Insert
     suspend fun insertarUsuario(usuario: Usuario): Long

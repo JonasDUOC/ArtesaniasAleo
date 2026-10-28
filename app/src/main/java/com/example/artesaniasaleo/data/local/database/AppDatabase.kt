@@ -37,7 +37,7 @@ import com.example.artesaniasaleo.data.local.entity.Usuario
         Pedido::class,
         PedidoDetalle::class
     ],
-    version = 1,
+    version = 2, // 2: PerfilUsuario.telefono
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -74,9 +74,22 @@ abstract class AppDatabase : RoomDatabase() {
         private val datosInicialesCallback = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                insertarAdmin(db)
-                insertarCatalogo(db)
+                insertarDatosIniciales(db)
             }
+
+            // Si se sube la versión, fallbackToDestructiveMigration borra y recrea las tablas,
+            // pero NO llama a onCreate: por eso los datos semilla se insertan también aquí
+            override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+                super.onDestructiveMigration(db)
+                insertarDatosIniciales(db)
+            }
+        }
+
+        // INSERT OR IGNORE: si un dato ya existe (mismo id), se salta en vez de fallar
+        private fun insertarDatosIniciales(db: SupportSQLiteDatabase) {
+            insertarAdmin(db)
+            insertarClienteDemo(db)
+            insertarCatalogo(db)
         }
 
         // Cuenta de administrador preexistente (id 1)
@@ -84,14 +97,44 @@ abstract class AppDatabase : RoomDatabase() {
             val ahora = System.currentTimeMillis()
             db.execSQL(
                 """
-                INSERT INTO usuario (correo, contrasenia, rol, estado, fechaRegistro)
-                VALUES ('admin@aleyleo.cl', 'admin123', 'admin', 'activo', $ahora)
+                INSERT OR IGNORE INTO usuario (id, correo, contrasenia, rol, estado, fechaRegistro)
+                VALUES (1, 'admin@aleyleo.cl', 'admin123', 'admin', 'activo', $ahora)
                 """
             )
             db.execSQL(
                 """
-                INSERT INTO perfil_usuario (usuarioId, rut, nombre, apellido)
-                VALUES (1, '11.111.111-1', 'Administradora', 'Ale y Leo')
+                INSERT OR IGNORE INTO perfil_usuario (usuarioId, rut, nombre, apellido, telefono)
+                VALUES (1, '11.111.111-1', 'Administradora', 'Ale y Leo', '+56 9 1111 1111')
+                """
+            )
+        }
+
+        // Cliente de prueba (id 2) con perfil, dirección y tarjeta sintética,
+        // para probar la compra sin registrarse cada vez: ana@mail.com / 123456
+        private fun insertarClienteDemo(db: SupportSQLiteDatabase) {
+            val ahora = System.currentTimeMillis()
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO usuario (id, correo, contrasenia, rol, estado, fechaRegistro)
+                VALUES (2, 'ana@mail.com', '123456', 'user', 'activo', $ahora)
+                """
+            )
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO perfil_usuario (usuarioId, rut, nombre, apellido, telefono)
+                VALUES (2, '12.345.678-5', 'Ana', 'Pérez', '+56 9 1234 5678')
+                """
+            )
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO direccion (usuarioId, region, comuna, calle, numero, departamento)
+                VALUES (2, 'Región Metropolitana', 'Ñuñoa', 'Av. Irarrázaval', '1234', NULL)
+                """
+            )
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO tarjeta (usuarioId, tipo, numero, vencimiento, cvv)
+                VALUES (2, 'Crédito', '4111111111111111', '12/29', '123')
                 """
             )
         }
@@ -102,7 +145,7 @@ abstract class AppDatabase : RoomDatabase() {
         private fun insertarCatalogo(db: SupportSQLiteDatabase) {
             db.execSQL(
                 """
-                INSERT INTO categoria (id, nombre) VALUES
+                INSERT OR IGNORE INTO categoria (id, nombre) VALUES
                 (1, 'Cerámica'),
                 (2, 'Tejidos'),
                 (3, 'Madera'),
@@ -111,7 +154,7 @@ abstract class AppDatabase : RoomDatabase() {
             )
             db.execSQL(
                 """
-                INSERT INTO producto (id, categoriaId, titulo, descripcion, precio, estado) VALUES
+                INSERT OR IGNORE INTO producto (id, categoriaId, titulo, descripcion, precio, estado) VALUES
                 (1, 1, 'Jarrón de greda', 'Pieza única elaborada con técnica de greda cocida y pintura mineral. 24 cm de alto x 14 cm de diámetro.', 18500, 'activo'),
                 (2, 1, 'Taza esmaltada', 'Taza de cerámica modelada a mano con esmalte azul. Capacidad 300 ml.', 7900, 'activo'),
                 (3, 2, 'Chal de lana', 'Tejido a telar con lana de oveja teñida naturalmente. 180 x 60 cm.', 12000, 'activo'),

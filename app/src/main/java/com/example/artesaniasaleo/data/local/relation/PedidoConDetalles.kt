@@ -6,6 +6,7 @@ import com.example.artesaniasaleo.data.local.entity.Direccion
 import com.example.artesaniasaleo.data.local.entity.Pedido
 import com.example.artesaniasaleo.data.local.entity.PedidoDetalle
 import com.example.artesaniasaleo.data.local.entity.PerfilUsuario
+import com.example.artesaniasaleo.data.local.entity.Usuario
 
 data class PedidoConDetalles(
     @Embedded val pedido: Pedido,
@@ -24,5 +25,11 @@ data class PedidoConDetalles(
         parentColumn = "usuarioId",
         entityColumn = "usuarioId"
     )
-    val direccion: Direccion?
+    val direccion: Direccion?,
+    // Para mostrar el correo del cliente en el detalle del pedido del administrador (CU-36)
+    @Relation(
+        parentColumn = "usuarioId",
+        entityColumn = "id"
+    )
+    val usuario: Usuario?
 )

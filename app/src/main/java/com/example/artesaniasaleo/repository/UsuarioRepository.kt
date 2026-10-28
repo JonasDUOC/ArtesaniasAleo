@@ -6,6 +6,7 @@ import com.example.artesaniasaleo.data.local.entity.Direccion
 import com.example.artesaniasaleo.data.local.entity.PerfilUsuario
 import com.example.artesaniasaleo.data.local.entity.Tarjeta
 import com.example.artesaniasaleo.data.local.entity.Usuario
+import com.example.artesaniasaleo.data.local.relation.UsuarioConPerfil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -85,6 +86,18 @@ class UsuarioRepository(
     suspend fun eliminarTarjeta(usuarioId: Int) = usuarioDao.eliminarTarjeta(usuarioId)
 
     fun observarTodos(): Flow<List<Usuario>> = usuarioDao.observarTodos()
+
+    fun observarTodosConPerfil(): Flow<List<UsuarioConPerfil>> = usuarioDao.observarTodosConPerfil()
+
+    // CU-09: cambiar el correo, sin repetir el de otra cuenta
+    suspend fun cambiarCorreo(usuarioId: Int, nuevoCorreo: String) {
+        val correo = normalizar(nuevoCorreo)
+        val existente = usuarioDao.buscarPorCorreo(correo)
+        if (existente != null && existente.id != usuarioId) {
+            throw IllegalArgumentException("Ese correo ya está registrado en otra cuenta")
+        }
+        usuarioDao.actualizarCorreo(usuarioId, correo)
+    }
 
     suspend fun cambiarRol(usuarioId: Int, rol: String) = usuarioDao.actualizarRol(usuarioId, rol)
 
