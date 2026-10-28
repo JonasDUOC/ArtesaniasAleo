@@ -10,7 +10,6 @@ import com.example.artesaniasaleo.model.CategoriaUi
 import com.example.artesaniasaleo.model.DatosPagoUiState
 import com.example.artesaniasaleo.model.EstadoPedido
 import com.example.artesaniasaleo.model.LineaPedido
-import com.example.artesaniasaleo.model.LoginUiState
 import com.example.artesaniasaleo.model.PEDIDOS_DEMO
 import com.example.artesaniasaleo.model.PERFIL_DEMO
 import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
@@ -22,12 +21,14 @@ import com.example.artesaniasaleo.model.RecuperarUiState
 import com.example.artesaniasaleo.model.RegistroUiState
 import com.example.artesaniasaleo.model.USUARIOS_DEMO
 import com.example.artesaniasaleo.model.UsuarioUi
+import com.example.artesaniasaleo.ui.utils.esCorreoValido
+import com.example.artesaniasaleo.ui.utils.esRutValido
 
 // PROVISIONAL: guarda los datos en memoria y valida, para que la app funcione completa.
 // Cuando existan los ViewModel y el repository (con Jonas), cada parte pasa a su ViewModel
 // y los datos se leen y guardan en Room. Las pantallas no cambian.
+// Ya migrado: login y sesión → LoginViewModel y SesionViewModel.
 class EstadoDemo {
-    var login by mutableStateOf(LoginUiState())
     var registro by mutableStateOf(RegistroUiState())
     var recuperar by mutableStateOf(RecuperarUiState())
     var catalogo by mutableStateOf(CatalogoUiState(productos = PRODUCTOS_DEMO))
@@ -39,7 +40,6 @@ class EstadoDemo {
     var usuarios by mutableStateOf(USUARIOS_DEMO)
     var formCategoria by mutableStateOf(CategoriaFormUiState())
     var formProducto by mutableStateOf(ProductoFormUiState())
-    var esAdmin by mutableStateOf(false)
     private var siguientePedido = 1034
     private var siguienteId = 100 // ids para categorías y productos nuevos
 
@@ -61,16 +61,7 @@ class EstadoDemo {
     val pedidosPendientes: Int
         get() = pedidos.count { it.estado == EstadoPedido.CONFIRMACION_PAGO }
 
-    // ---------- Login y registro (mismas reglas que el mockup) ----------
-
-    fun validarLogin(): Boolean {
-        val errorCorreo = if (esCorreoValido(login.correo)) null else "Ingresa un correo válido"
-        val errorContrasena = if (login.contrasena.length >= 4) null else "Contraseña incorrecta"
-        login = login.copy(errorCorreo = errorCorreo, errorContrasena = errorContrasena)
-        // Demo: este correo entra como administrador; en la versión final se lee el rol de Usuario
-        esAdmin = login.correo.trim().equals(CORREO_ADMIN, ignoreCase = true)
-        return errorCorreo == null && errorContrasena == null
-    }
+    // ---------- Registro (mismas reglas que el mockup) ----------
 
     // Valida la etapa actual del registro; devuelve true si se puede avanzar
     fun validarEtapaRegistro(): Boolean {
@@ -179,10 +170,9 @@ class EstadoDemo {
         return valido
     }
 
+    // La sesión la cierra SesionViewModel; aquí solo se vacía el carrito de la demo
     fun cerrarSesion() {
-        login = LoginUiState()
         carrito = emptyMap()
-        esAdmin = false
     }
 
     // ---------- Administrador: pedidos ----------
@@ -266,32 +256,5 @@ class EstadoDemo {
 
     fun hacerAdmin(id: Int) {
         usuarios = usuarios.map { if (it.id == id) it.copy(esAdmin = true) else it }
-    }
-
-    // ---------- Validaciones ----------
-
-    companion object {
-        const val CORREO_ADMIN = "admin@aleyleo.cl"
-    }
-
-    private fun esCorreoValido(correo: String) = Regex("""\S+@\S+\.\S+""").matches(correo.trim())
-
-    // RUT chileno con formato 12.345.678-5 y dígito verificador (módulo 11)
-    private fun esRutValido(rut: String): Boolean {
-        val partes = Regex("""(\d{1,2})\.(\d{3})\.(\d{3})-([\dkK])""").matchEntire(rut.trim()) ?: return false
-        val (a, b, c, dv) = partes.destructured
-        val cuerpo = a + b + c
-        var suma = 0
-        var multiplicador = 2
-        for (digito in cuerpo.reversed()) {
-            suma += digito.digitToInt() * multiplicador
-            multiplicador = if (multiplicador < 7) multiplicador + 1 else 2
-        }
-        val esperado = when (val resto = 11 - suma % 11) {
-            11 -> "0"
-            10 -> "K"
-            else -> resto.toString()
-        }
-        return esperado == dv.uppercase()
     }
 }

@@ -16,17 +16,23 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.artesaniasaleo.model.EstadoSesion
 import com.example.artesaniasaleo.model.RecuperarUiState
 import com.example.artesaniasaleo.ui.components.MenuLateral
 import com.example.artesaniasaleo.ui.components.OpcionMenu
+import com.example.artesaniasaleo.ui.components.PantallaCarga
 import com.example.artesaniasaleo.ui.screens.admin.PantallaEditarUsuario
 import com.example.artesaniasaleo.ui.screens.admin.PantallaFormCategoria
 import com.example.artesaniasaleo.ui.screens.admin.PantallaFormProducto
@@ -49,11 +55,39 @@ import com.example.artesaniasaleo.ui.screens.registro.PantallaRegistro
 import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaPedido
 import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaSeguimiento
 import com.example.artesaniasaleo.ui.screens.terminos.PantallaTerminos
+import com.example.artesaniasaleo.viewmodel.AppViewModelFactory
+import com.example.artesaniasaleo.viewmodel.LoginViewModel
+import com.example.artesaniasaleo.viewmodel.SesionViewModel
 import kotlinx.coroutines.launch
+
+// Punto de entrada de la navegación: primero averigua si hay sesión y luego muestra la app
+@Composable
+fun AppNavegacion() {
+    val contexto = LocalContext.current
+    // Una sola Factory para toda la app; remember evita crearla de nuevo en cada recomposición
+    val fabrica = remember { AppViewModelFactory(contexto) }
+    // Creado fuera del NavHost → vive mientras vive la Activity y lo comparten todas las pantallas
+    val sesionViewModel: SesionViewModel = viewModel(factory = fabrica)
+    val sesion by sesionViewModel.estado.collectAsState()
+
+    if (sesion is EstadoSesion.Verificando) {
+        PantallaCarga() // aún no se lee DataStore: no sabemos si mostrar el login o el catálogo
+    } else {
+        NavegacionPrincipal(
+            fabrica = fabrica,
+            sesion = sesion,
+            onCerrarSesion = sesionViewModel::cerrarSesion
+        )
+    }
+}
 
 // Mapa de la app: qué pantalla se muestra en cada ruta y cómo se pasa de una a otra
 @Composable
-fun AppNavegacion() {
+private fun NavegacionPrincipal(
+    fabrica: AppViewModelFactory,
+    sesion: EstadoSesion,
+    onCerrarSesion: () -> Unit
+) {
     val navController = rememberNavController() // recuerda en qué pantalla estamos y el historial
     val estado = remember { EstadoDemo() }      // provisional, hasta tener los ViewModel
     val contexto = LocalContext.current
@@ -64,8 +98,29 @@ fun AppNavegacion() {
     val aviso: (String) -> Unit = { Toast.makeText(contexto, it, Toast.LENGTH_SHORT).show() }
     val abrirMenu: () -> Unit = { alcance.launch { menu.open() } }
     val volver: () -> Unit = { navController.popBackStack() }
+    // El rol se lee de Room a través de SesionViewModel (ya no del correo escrito)
+    val esAdmin = (sesion as? EstadoSesion.Activa)?.esAdmin == true
     // Pantalla base después del login: catálogo para el cliente, resumen para el administrador
-    val inicio = if (estado.esAdmin) Rutas.RESUMEN else Rutas.CATALOGO
+    val inicio = if (esAdmin) Rutas.RESUMEN else Rutas.CATALOGO
+    // Pantalla con que abre la app; remember la fija la primera vez (si hay sesión guardada, entra directo)
+    val destinoInicial = remember { if (sesion is EstadoSesion.Activa) inicio else Rutas.LOGIN }
+    val irAlLogin: () -> Unit = {
+        // Borra todo el historial: "atrás" ya no vuelve a pantallas de la sesión
+        navController.navigate(Rutas.LOGIN) { popUpTo(navController.graph.id) { inclusive = true } }
+    }
+
+    // La sesión decide la pantalla: se ejecuta cada vez que cambia (login, cerrar sesión, bloqueo)
+    LaunchedEffect(sesion) {
+        val rutaActual = navController.currentDestination?.route ?: return@LaunchedEffect
+        val enPantallaSinSesion = rutaActual in Rutas.SIN_SESION
+        when {
+            // Acaba de iniciar sesión (estaba en login/registro) → a su pantalla base
+            sesion is EstadoSesion.Activa && enPantallaSinSesion ->
+                navController.navigate(inicio) { popUpTo(navController.graph.id) { inclusive = true } }
+            // Cerró sesión o lo bloquearon estando dentro → al login
+            sesion is EstadoSesion.SinSesion && !enPantallaSinSesion -> irAlLogin()
+        }
+    }
     // Ícono de casa: vuelve a la pantalla base del historial
     val irAInicio: () -> Unit = { navController.popBackStack(inicio, inclusive = false) }
     // Opciones del menú: abren la pantalla dejando solo la pantalla base debajo
@@ -83,7 +138,7 @@ fun AppNavegacion() {
     }
 
     // El menú cambia según el rol, como en el mockup
-    val opcionesRol = if (estado.esAdmin) listOf(
+    val opcionesRol = if (esAdmin) listOf(
         OpcionMenu("Resumen", Icons.Filled.DateRange, { irDesdeMenu(Rutas.RESUMEN) }),
         OpcionMenu("Notificaciones", Icons.Filled.Notifications, { irDesdeMenu(Rutas.NOTIFICACIONES) }, estado.pedidosPendientes),
         OpcionMenu("Gestión de contenido", Icons.Filled.Edit, { irDesdeMenu(Rutas.GESTION) }),
@@ -98,9 +153,10 @@ fun AppNavegacion() {
     val opcionesMenu = opcionesRol + listOf(
         OpcionMenu("Cerrar sesión", Icons.AutoMirrored.Filled.ExitToApp, {
             alcance.launch { menu.close() }
-            estado.cerrarSesion()
-            // Borra todo el historial: "atrás" ya no vuelve a pantallas de la sesión
-            navController.navigate(Rutas.LOGIN) { popUpTo(navController.graph.id) { inclusive = true } }
+            estado.cerrarSesion()   // vacía el carrito de la demo
+            onCerrarSesion()        // borra la sesión de DataStore → LaunchedEffect(sesion) lleva al login
+            // Provisional: el registro de la demo entra sin sesión real, así que no hay cambio que observar
+            if (sesion !is EstadoSesion.Activa) irAlLogin()
         })
     )
 
@@ -110,20 +166,20 @@ fun AppNavegacion() {
         gesturesEnabled = menu.isOpen,
         drawerContent = { MenuLateral(opcionesMenu) }
     ) {
-        NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+        NavHost(navController = navController, startDestination = destinoInicial) {
 
             composable(Rutas.LOGIN) {
+                // Creado dentro de composable(): vive mientras el login esté en el historial
+                val loginViewModel: LoginViewModel = viewModel(factory = fabrica)
+                val uiState by loginViewModel.uiState.collectAsState()
+                val operacion by loginViewModel.operacion.collectAsState()
                 PantallaLogin(
-                    estado = estado.login,
-                    onCorreoChange = { estado.login = estado.login.copy(correo = it) },
-                    onContrasenaChange = { estado.login = estado.login.copy(contrasena = it) },
-                    onIniciarSesion = {
-                        if (estado.validarLogin()) {
-                            val destino = if (estado.esAdmin) Rutas.RESUMEN else Rutas.CATALOGO
-                            // popUpTo: saca el login del historial para que "atrás" no vuelva a él
-                            navController.navigate(destino) { popUpTo(Rutas.LOGIN) { inclusive = true } }
-                        }
-                    },
+                    estado = uiState,
+                    operacion = operacion,
+                    onCorreoChange = loginViewModel::onCorreoChange,
+                    onContrasenaChange = loginViewModel::onContrasenaChange,
+                    // No navega aquí: al guardarse la sesión, LaunchedEffect(sesion) lleva a la pantalla base
+                    onIniciarSesion = loginViewModel::iniciarSesion,
                     onCrearCuenta = { navController.navigate(Rutas.REGISTRO) },
                     onOlvideContrasena = { navController.navigate(Rutas.RECUPERAR) }
                 )

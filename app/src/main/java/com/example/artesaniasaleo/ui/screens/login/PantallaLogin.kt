@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.artesaniasaleo.model.EstadoOperacion
 import com.example.artesaniasaleo.model.LoginUiState
 import com.example.artesaniasaleo.ui.components.BotonPrincipal
 import com.example.artesaniasaleo.ui.components.BotonSecundario
@@ -26,6 +27,7 @@ import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 @Composable
 fun PantallaLogin(
     estado: LoginUiState,
+    operacion: EstadoOperacion,          // Inactivo / Cargando / Exito / Error, viene del LoginViewModel
     onCorreoChange: (String) -> Unit,
     onContrasenaChange: (String) -> Unit,
     onIniciarSesion: () -> Unit,
@@ -33,6 +35,10 @@ fun PantallaLogin(
     onOlvideContrasena: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Se calculan una vez desde el estado sellado y se usan abajo
+    val cargando = operacion is EstadoOperacion.Cargando || operacion is EstadoOperacion.Exito
+    val mensajeError = (operacion as? EstadoOperacion.Error)?.mensaje
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -67,7 +73,7 @@ fun PantallaLogin(
                 placeholder = "tucorreo@mail.com",
                 mensajeError = estado.errorCorreo,
                 tipoTeclado = KeyboardType.Email,
-                habilitado = !estado.cargando
+                habilitado = !cargando
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -76,17 +82,17 @@ fun PantallaLogin(
                 etiqueta = "Contraseña",
                 valor = estado.contrasena,
                 onValorChange = onContrasenaChange,
-                placeholder = "mín. 4 caracteres",
+                placeholder = "Tu contraseña",
                 mensajeError = estado.errorContrasena,
                 esContrasena = true,
-                habilitado = !estado.cargando
+                habilitado = !cargando
             )
 
             // Error que no es de un campo (ej.: credenciales incorrectas)
-            if (estado.errorGeneral != null) {
+            if (mensajeError != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = estado.errorGeneral,
+                    text = mensajeError,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -95,9 +101,9 @@ fun PantallaLogin(
             Spacer(modifier = Modifier.height(20.dp))
 
             BotonPrincipal(
-                texto = if (estado.cargando) "Ingresando..." else "Iniciar sesión",
+                texto = if (cargando) "Ingresando..." else "Iniciar sesión",
                 onClick = onIniciarSesion,
-                habilitado = estado.puedeEnviar
+                habilitado = estado.camposCompletos && !cargando
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -129,6 +135,7 @@ private fun VistaLoginVacio() {
     ArtesaniasAleoTheme {
         PantallaLogin(
             estado = LoginUiState(),
+            operacion = EstadoOperacion.Inactivo,
             onCorreoChange = {},
             onContrasenaChange = {},
             onIniciarSesion = {},
@@ -146,9 +153,9 @@ private fun VistaLoginConErrores() {
             estado = LoginUiState(
                 correo = "maxi@",
                 contrasena = "12",
-                errorCorreo = "Ingresa un correo válido",
-                errorContrasena = "Contraseña incorrecta"
+                errorCorreo = "Ingresa un correo válido"
             ),
+            operacion = EstadoOperacion.Error("Contraseña incorrecta"),
             onCorreoChange = {},
             onContrasenaChange = {},
             onIniciarSesion = {},
