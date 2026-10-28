@@ -40,7 +40,8 @@ fun TarjetaProducto(
     esFavorito: Boolean,
     onClick: () -> Unit,
     onFavoritoClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imagenUrl: String? = null // ruta de la primera foto; null = degradado provisional
 ) {
     Card(
         onClick = onClick,
@@ -51,16 +52,13 @@ fun TarjetaProducto(
         )
     ) {
         Box {
-            // Imagen provisional: degradado terracota a salvia, como en el mockup
-            Box(
+            // Foto del producto; sin foto, el degradado terracota a salvia del mockup
+            ImagenArtesania(
+                imagen = rutaAUri(imagenUrl),
+                descripcion = nombre,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
-                        )
-                    )
+                    .height(120.dp)
             )
             IconButton(
                 onClick = onFavoritoClick,

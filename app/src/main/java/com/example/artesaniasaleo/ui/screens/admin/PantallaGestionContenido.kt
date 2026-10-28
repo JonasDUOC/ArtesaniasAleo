@@ -38,6 +38,7 @@ import com.example.artesaniasaleo.ui.components.BotonPrincipal
 import com.example.artesaniasaleo.ui.components.CampoSelector
 import com.example.artesaniasaleo.ui.components.CampoTexto
 import com.example.artesaniasaleo.ui.components.FilaLista
+import com.example.artesaniasaleo.ui.components.SelectorImagenes
 import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 
 // Dos pestañas: categorías y productos, cada una con su lista y botón "Nuevo"
@@ -219,12 +220,17 @@ fun PantallaFormProducto(
                 },
                 mensajeError = estado.errorCategoria
             )
-            Text(
-                "Imágenes: se mostrarán como carrusel (pendiente).",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 12.dp)
+            Spacer(Modifier.height(12.dp))
+            // CU-32: una o varias imágenes desde la galería o la cámara (se muestran como carrusel)
+            SelectorImagenes(
+                imagenes = estado.imagenes,
+                mensajeError = estado.errorImagenes,
+                onAgregar = { nuevas ->
+                    onEstadoChange(estado.copy(imagenes = estado.imagenes + nuevas, errorImagenes = null))
+                },
+                onQuitar = { uri -> onEstadoChange(estado.copy(imagenes = estado.imagenes - uri)) }
             )
+            Spacer(Modifier.height(16.dp))
             BotonPrincipal(texto = "Guardar", onClick = onGuardar)
         }
     }

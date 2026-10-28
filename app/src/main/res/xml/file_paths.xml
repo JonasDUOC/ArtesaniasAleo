@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Carpetas que FileProvider puede compartir: solo la caché temporal de las fotos de cámara -->
+<paths>
+    <cache-path
+        name="camara"
+        path="camara/" />
+</paths>

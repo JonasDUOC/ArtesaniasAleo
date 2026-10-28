@@ -42,6 +42,7 @@ fun GrillaProductos(
                     nombre = producto.nombre,
                     precio = producto.precio,
                     esFavorito = producto.esFavorito,
+                    imagenUrl = producto.imagenUrl,
                     onClick = { onProductoClick(producto.id) },
                     onFavoritoClick = { onFavoritoClick(producto.id) }
                 )

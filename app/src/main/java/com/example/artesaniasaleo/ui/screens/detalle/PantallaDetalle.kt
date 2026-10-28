@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,6 +30,8 @@ import com.example.artesaniasaleo.ui.components.BarraSuperior
 import com.example.artesaniasaleo.ui.components.BotonPrincipal
 import com.example.artesaniasaleo.ui.components.BotonSecundario
 import com.example.artesaniasaleo.ui.components.formatearPrecio
+import com.example.artesaniasaleo.ui.components.ImagenArtesania
+import com.example.artesaniasaleo.ui.components.rutaAUri
 import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 
 @Composable
@@ -51,17 +56,43 @@ fun PantallaDetalle(
                 .padding(espacioBarra)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Imagen provisional: mismo degradado que la tarjeta, pero más grande
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.primary)
+            // CU-16: carrusel de imágenes (se desliza con el dedo). Sin fotos: degradado del mockup
+            val imagenes = producto.imagenes
+            if (imagenes.size > 1) {
+                val estadoCarrusel = rememberPagerState(pageCount = { imagenes.size })
+                Box {
+                    HorizontalPager(
+                        state = estadoCarrusel,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                    ) { pagina ->
+                        ImagenArtesania(
+                            imagen = rutaAUri(imagenes[pagina]),
+                            descripcion = producto.nombre,
+                            modifier = Modifier.fillMaxSize()
                         )
+                    }
+                    Text(
+                        text = "${estadoCarrusel.currentPage + 1} / ${imagenes.size}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                            .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
                     )
-            )
+                }
+            } else {
+                ImagenArtesania(
+                    imagen = rutaAUri(imagenes.firstOrNull()),
+                    descripcion = producto.nombre,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                )
+            }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(producto.nombre, style = MaterialTheme.typography.titleLarge)
                 Text(
