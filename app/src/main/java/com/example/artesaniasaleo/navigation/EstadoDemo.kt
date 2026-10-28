@@ -14,22 +14,18 @@ import com.example.artesaniasaleo.model.PEDIDOS_DEMO
 import com.example.artesaniasaleo.model.PERFIL_DEMO
 import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
 import com.example.artesaniasaleo.model.PedidoUi
-import com.example.artesaniasaleo.model.PerfilUiState
 import com.example.artesaniasaleo.model.ProductoFormUiState
 import com.example.artesaniasaleo.model.ProductoUi
 import com.example.artesaniasaleo.model.RecuperarUiState
-import com.example.artesaniasaleo.model.RegistroUiState
 import com.example.artesaniasaleo.model.USUARIOS_DEMO
 import com.example.artesaniasaleo.model.UsuarioUi
 import com.example.artesaniasaleo.ui.utils.esCorreoValido
-import com.example.artesaniasaleo.ui.utils.esRutValido
 
 // PROVISIONAL: guarda los datos en memoria y valida, para que la app funcione completa.
 // Cuando existan los ViewModel y el repository (con Jonas), cada parte pasa a su ViewModel
 // y los datos se leen y guardan en Room. Las pantallas no cambian.
-// Ya migrado: login y sesión → LoginViewModel y SesionViewModel.
+// Ya migrado: login y sesión → LoginViewModel y SesionViewModel; registro → RegistroViewModel.
 class EstadoDemo {
-    var registro by mutableStateOf(RegistroUiState())
     var recuperar by mutableStateOf(RecuperarUiState())
     var catalogo by mutableStateOf(CatalogoUiState(productos = PRODUCTOS_DEMO))
     var perfil by mutableStateOf(PERFIL_DEMO)
@@ -61,35 +57,7 @@ class EstadoDemo {
     val pedidosPendientes: Int
         get() = pedidos.count { it.estado == EstadoPedido.CONFIRMACION_PAGO }
 
-    // ---------- Registro (mismas reglas que el mockup) ----------
-
-    // Valida la etapa actual del registro; devuelve true si se puede avanzar
-    fun validarEtapaRegistro(): Boolean {
-        val r = registro
-        registro = when (r.pasoActual) {
-            1 -> r.copy(
-                errorCorreo = if (esCorreoValido(r.correo)) null else "Ingresa un correo válido",
-                errorContrasena = if (r.contrasena.length >= 6) null else "Debe tener al menos 6 caracteres",
-                errorConfirmar = if (r.confirmarContrasena == r.contrasena) null else "Las contraseñas no coinciden",
-                errorTerminos = if (r.aceptaTerminos) null else "Debes aceptar los términos para continuar"
-            )
-            2 -> r.copy(errorCodigo = if (r.codigo == "1234") null else "Código incorrecto") // demo: 1234
-            else -> r.copy(errorRut = if (esRutValido(r.rut)) null else "RUT inválido (verifica el dígito verificador)")
-        }
-        val x = registro
-        return listOf(x.errorCorreo, x.errorContrasena, x.errorConfirmar, x.errorTerminos, x.errorCodigo, x.errorRut)
-            .all { it == null }
-    }
-
-    // Al terminar el registro, los datos pasan al perfil
-    fun finalizarRegistro() {
-        val r = registro
-        perfil = PerfilUiState(
-            rut = r.rut, nombres = r.nombres, apellido = r.apellido, correo = r.correo,
-            region = r.region, comuna = r.comuna, calle = r.calle, numero = r.numero, departamento = r.departamento
-        )
-        registro = RegistroUiState()
-    }
+    // ---------- Recuperar contraseña ----------
 
     fun validarRecuperar(): Boolean {
         val error = if (esCorreoValido(recuperar.correo)) null else "Ingresa un correo válido"

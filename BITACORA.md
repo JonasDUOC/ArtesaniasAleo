@@ -24,7 +24,7 @@ com.example.artesaniasaleo
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
-├── viewmodel/            🔄 AppViewModelFactory, SesionViewModel, LoginViewModel · ⬜ RegistroViewModel...  ← SIGUIENTE
+├── viewmodel/            🔄 AppViewModelFactory, SesionViewModel, LoginViewModel, RegistroViewModel · ⬜ Recuperar, Catalogo...  ← SIGUIENTE
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
@@ -97,6 +97,9 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | La sesión decide la navegación (`LaunchedEffect(sesion)`) | Login y registro solo guardan la sesión; un único observador lleva al catálogo/resumen o al login. Si hay sesión guardada, la app abre directo |
 | `SesionViewModel` fuera del NavHost | Vive con la Activity: el rol (menú) y cerrar sesión se comparten en todas las pantallas |
 | Usuario bloqueado = sin sesión | Si el admin bloquea una cuenta, `SesionViewModel` la saca al login |
+| Registro: `correoDisponible()` en la etapa 1 | CU-01 pide avisar del correo ya registrado antes de pedir el código, no al final |
+| Registro sin navegación propia | `registrar()` guarda la sesión y el mismo observador de sesión lleva al catálogo (CU-03: inicia sesión automáticamente) |
+| `RegistroViewModel` dentro de `composable(REGISTRO)` | Sigue vivo al ir a Términos y volver, así no se pierde lo escrito (CU-04) |
 | Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
 
 ---
@@ -115,6 +118,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Registro con Room (RegistroViewModel)
+**Autor:** Jonas · **Rama:** `feature/registro-viewmodel`
+
+- **Qué:** en `viewmodel/` se creó `RegistroViewModel` (etapa 1 valida y revisa `correoDisponible`; etapa 2 código fijo 1234; etapa 3 valida RUT y dirección y llama a `registrar`). `RegistroUiState` deja de tener `cargando`/`errorGeneral`/`registroExitoso`; `PantallaRegistro` recibe `operacion` y muestra el error general. Se quitó el registro de `EstadoDemo` y el `if` provisional de "Cerrar sesión".
+- **Por qué:** las cuentas nuevas quedan guardadas en Room (usuario + perfil + dirección en una transacción) e inician sesión solas (CU-01 a CU-03).
+- **Conecta con:** `UsuarioRepository.correoDisponible` y `registrar`; `SesionViewModel` navega al catálogo.
+- **Pendiente:** CU-07 recuperar contraseña (la pantalla necesita etapas de código y nueva contraseña); el perfil sigue mostrando datos demo hasta `PerfilViewModel`; RUT del admin sembrado sin puntos (`11111111-1`) vs. formato del registro (`12.345.678-5`).
 
 ### 2026-10-27 — Factory, sesión y login con Room
 **Autor:** Jonas · **Rama:** `feature/login-viewmodel`

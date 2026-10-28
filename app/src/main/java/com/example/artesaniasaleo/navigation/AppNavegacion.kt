@@ -28,6 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.artesaniasaleo.model.EstadoOperacion
 import com.example.artesaniasaleo.model.EstadoSesion
 import com.example.artesaniasaleo.model.RecuperarUiState
 import com.example.artesaniasaleo.ui.components.MenuLateral
@@ -57,6 +58,7 @@ import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaSeguimiento
 import com.example.artesaniasaleo.ui.screens.terminos.PantallaTerminos
 import com.example.artesaniasaleo.viewmodel.AppViewModelFactory
 import com.example.artesaniasaleo.viewmodel.LoginViewModel
+import com.example.artesaniasaleo.viewmodel.RegistroViewModel
 import com.example.artesaniasaleo.viewmodel.SesionViewModel
 import kotlinx.coroutines.launch
 
@@ -155,8 +157,6 @@ private fun NavegacionPrincipal(
             alcance.launch { menu.close() }
             estado.cerrarSesion()   // vacía el carrito de la demo
             onCerrarSesion()        // borra la sesión de DataStore → LaunchedEffect(sesion) lleva al login
-            // Provisional: el registro de la demo entra sin sesión real, así que no hay cambio que observar
-            if (sesion !is EstadoSesion.Activa) irAlLogin()
         })
     )
 
@@ -186,27 +186,22 @@ private fun NavegacionPrincipal(
             }
 
             composable(Rutas.REGISTRO) {
+                // Vive mientras el registro esté en el historial: si vas a Términos y vuelves,
+                // lo escrito se conserva (CU-04)
+                val registroViewModel: RegistroViewModel = viewModel(factory = fabrica)
+                val uiState by registroViewModel.uiState.collectAsState()
+                val operacion by registroViewModel.operacion.collectAsState()
+                // Mensaje al crear la cuenta; la navegación al catálogo la hace LaunchedEffect(sesion)
+                LaunchedEffect(operacion) {
+                    if (operacion is EstadoOperacion.Exito) aviso("Cuenta creada con éxito")
+                }
                 PantallaRegistro(
-                    estado = estado.registro,
-                    onEstadoChange = { estado.registro = it },
-                    onContinuar = {
-                        val paso = estado.registro.pasoActual
-                        if (estado.validarEtapaRegistro()) {
-                            if (paso < 3) {
-                                if (paso == 1) aviso("Código enviado a tu correo")
-                                estado.registro = estado.registro.copy(pasoActual = paso + 1)
-                            } else {
-                                estado.finalizarRegistro()
-                                aviso("Cuenta creada con éxito")
-                                navController.navigate(Rutas.CATALOGO) { popUpTo(Rutas.LOGIN) { inclusive = true } }
-                            }
-                        }
-                    },
-                    onVolver = {
-                        // En la etapa 2 o 3 retrocede una etapa; en la 1 vuelve al login
-                        val paso = estado.registro.pasoActual
-                        if (paso > 1) estado.registro = estado.registro.copy(pasoActual = paso - 1) else volver()
-                    },
+                    estado = uiState,
+                    operacion = operacion,
+                    onEstadoChange = registroViewModel::onEstadoChange,
+                    onContinuar = registroViewModel::continuar,
+                    // En la etapa 2 o 3 retrocede una etapa; en la 1 vuelve al login
+                    onVolver = { if (!registroViewModel.retroceder()) volver() },
                     onVerTerminos = { navController.navigate(Rutas.TERMINOS) }
                 )
             }

@@ -32,6 +32,8 @@ class AppViewModelFactory(context: Context) : ViewModelProvider.Factory {
                 SesionViewModel(usuarioRepository) as T
             modelClass.isAssignableFrom(LoginViewModel::class.java) ->
                 LoginViewModel(usuarioRepository) as T
+            modelClass.isAssignableFrom(RegistroViewModel::class.java) ->
+                RegistroViewModel(usuarioRepository) as T
             else -> throw IllegalArgumentException(
                 "ViewModel no registrado en AppViewModelFactory: ${modelClass.name}"
             )
