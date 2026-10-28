@@ -8,6 +8,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,23 +61,35 @@ fun PantallaCategoria(
     onFavoritoClick: (Int) -> Unit,
     onVolver: () -> Unit,
     onMenu: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    ordenAscendente: Boolean = true,      // CU-15: precio de menor a mayor
+    onCambiarOrden: () -> Unit = {},
+    columnas: Int = 2
 ) {
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { BarraSuperior(titulo = nombre, esPantallaRaiz = false, onIconoIzquierdo = onVolver, onMenu = onMenu) }
     ) { espacioBarra ->
-        GrillaProductos(
-            productos = productos,
-            mensajeVacio = "No hay artesanías en esta categoría.",
-            onProductoClick = onProductoClick,
-            onFavoritoClick = onFavoritoClick,
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(espacioBarra)
                 .padding(horizontal = 16.dp)
-        )
+        ) {
+            // CU-15: cada toque invierte el orden por precio
+            TextButton(onClick = onCambiarOrden) {
+                Text(if (ordenAscendente) "Precio: menor a mayor ↑" else "Precio: mayor a menor ↓")
+            }
+            GrillaProductos(
+                productos = productos,
+                mensajeVacio = "No hay artesanías en esta categoría.",
+                onProductoClick = onProductoClick,
+                onFavoritoClick = onFavoritoClick,
+                columnas = columnas,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 

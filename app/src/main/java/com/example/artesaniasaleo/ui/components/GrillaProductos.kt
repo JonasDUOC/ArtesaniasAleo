@@ -20,7 +20,8 @@ fun GrillaProductos(
     mensajeVacio: String,
     onProductoClick: (Int) -> Unit,
     onFavoritoClick: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    columnas: Int = 2 // 2, 3 o 4 según WindowSizeUtils (Guía 9)
 ) {
     if (productos.isEmpty()) {
         Text(
@@ -31,7 +32,7 @@ fun GrillaProductos(
         )
     } else {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Fixed(columnas),
             modifier = modifier,
             contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

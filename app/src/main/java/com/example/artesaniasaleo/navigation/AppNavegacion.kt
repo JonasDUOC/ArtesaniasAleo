@@ -57,6 +57,8 @@ import com.example.artesaniasaleo.ui.screens.registro.PantallaRegistro
 import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaPedido
 import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaSeguimiento
 import com.example.artesaniasaleo.ui.screens.terminos.PantallaTerminos
+import com.example.artesaniasaleo.ui.utils.columnasGrilla
+import com.example.artesaniasaleo.ui.utils.obtenerWindowSizeClass
 import com.example.artesaniasaleo.viewmodel.AdminViewModel
 import com.example.artesaniasaleo.viewmodel.AppViewModelFactory
 import com.example.artesaniasaleo.viewmodel.CarritoViewModel
@@ -104,6 +106,10 @@ private fun NavegacionPrincipal(
     val catalogo by catalogoViewModel.uiState.collectAsState()
     val busqueda by catalogoViewModel.busqueda.collectAsState()
     val cargaCatalogo by catalogoViewModel.carga.collectAsState()
+    val ordenAscendente by catalogoViewModel.ordenAscendente.collectAsState()
+
+    // Guía 9: columnas de las grillas según el ancho de la pantalla (2 teléfono, 3 o 4 tablet)
+    val columnas = columnasGrilla(obtenerWindowSizeClass().widthSizeClass)
 
     val carritoViewModel: CarritoViewModel = viewModel(factory = fabrica)
     val itemsCarrito by carritoViewModel.items.collectAsState()
@@ -271,18 +277,24 @@ private fun NavegacionPrincipal(
                 val recuperarViewModel: RecuperarViewModel = viewModel(factory = fabrica)
                 val uiState by recuperarViewModel.uiState.collectAsState()
                 val operacion by recuperarViewModel.operacion.collectAsState()
+                // Contraseña cambiada → aviso y de vuelta al login para entrar con la nueva
                 LaunchedEffect(operacion) {
                     if (operacion is EstadoOperacion.Exito) {
-                        aviso("Código enviado a tu correo")
+                        aviso("Contraseña actualizada. Inicia sesión")
                         recuperarViewModel.operacionMostrada()
                         volver()
                     }
                 }
                 PantallaRecuperar(
                     estado = uiState,
+                    operacion = operacion,
                     onCorreoChange = recuperarViewModel::onCorreoChange,
-                    onEnviar = recuperarViewModel::enviar,
-                    onVolver = volver
+                    onCodigoChange = recuperarViewModel::onCodigoChange,
+                    onNuevaChange = recuperarViewModel::onNuevaChange,
+                    onConfirmarChange = recuperarViewModel::onConfirmarChange,
+                    onContinuar = recuperarViewModel::continuar,
+                    // En la etapa 2 vuelve a la 1; en la 1 vuelve al login
+                    onVolver = { if (!recuperarViewModel.retroceder()) volver() }
                 )
             }
 
@@ -296,7 +308,8 @@ private fun NavegacionPrincipal(
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
                     onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onInicio = irAInicio,
-                    onMenu = abrirMenu
+                    onMenu = abrirMenu,
+                    columnas = columnas
                 )
             }
 
@@ -330,11 +343,14 @@ private fun NavegacionPrincipal(
                 val id = entrada.arguments?.getInt("id") ?: 0
                 PantallaCategoria(
                     nombre = catalogo.nombreCategoria(id),
-                    productos = catalogo.productosDeCategoria(id), // ordenados por precio (CU-15)
+                    productos = catalogo.productosDeCategoria(id, ordenAscendente), // CU-15
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
                     onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onVolver = volver,
-                    onMenu = abrirMenu
+                    onMenu = abrirMenu,
+                    ordenAscendente = ordenAscendente,
+                    onCambiarOrden = catalogoViewModel::cambiarOrden,
+                    columnas = columnas
                 )
             }
 
@@ -344,7 +360,8 @@ private fun NavegacionPrincipal(
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
                     onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onInicio = irAInicio,
-                    onMenu = abrirMenu
+                    onMenu = abrirMenu,
+                    columnas = columnas
                 )
             }
 

@@ -32,7 +32,7 @@ com.example.artesaniasaleo
 │   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
-│   └── utils/            🔄 Validaciones.kt (correo, RUT, tarjeta) · ⬜ WindowSizeUtils.kt
+│   └── utils/            ✅ Validaciones.kt (correo, RUT, tarjeta), WindowSizeUtils.kt
 ├── navigation/           ✅ Rutas, AppNavegacion (NavHost + menú lateral). EstadoDemo eliminado
 └── MainActivity.kt
 ```
@@ -109,6 +109,8 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Datos semilla con `INSERT OR IGNORE` y `onDestructiveMigration` | Al subir la versión Room recrea las tablas sin llamar a `onCreate`; así los datos se insertan igual y nunca se duplican |
 | Imágenes con `BitmapFactory` reducido (sin librerías) | Fotos de cámara pesan MB; se cargan en segundo plano y achicadas. No agrega dependencias |
 | Menú del admin = opciones admin + las del cliente | CU-27: la interfaz del admin es la del cliente más el panel |
+| Vencimiento de tarjeta como texto `MM/AA` | Así viene en la tarjeta (sin día); Room no guarda fechas sin convertidor. Se valida formato y que no esté vencida con `YearMonth` |
+| `obtenerWindowSizeClass()` en `ui/utils` (Guía 9) | Un solo lugar calcula el tamaño; las pantallas reciben `columnas` y sus `@Preview` siguen funcionando |
 | Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
 
 ---
@@ -127,6 +129,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — Recuperar contraseña, orden por precio y diseño adaptable
+**Autor:** Jonas · **Rama:** `feature/ajustes-finales`
+
+- **Qué:** `PantallaRecuperar` y `RecuperarViewModel` con dos etapas (correo → código 1234 + nueva contraseña) que usan `recuperarContrasenia`. Botón de orden por precio ascendente/descendente en `PantallaCategoria` (`CatalogoViewModel.cambiarOrden`). `ui/utils/WindowSizeUtils.kt` (`obtenerWindowSizeClass`, `columnasGrilla`): las grillas muestran 2, 3 o 4 columnas. La validación de tarjeta rechaza fechas vencidas.
+- **Por qué:** completa CU-07 y CU-15, y la Guía 9 (Window Size Classes).
+- **Conecta con:** `AppNavegacion` calcula las columnas una vez y las pasa a Inicio, Favoritos y Categoría.
+- **Pendiente:** agregar `telefono` (opcional) a PERFIL CLIENTE en el MER.
 
 ### 2026-10-28 — App completa con Room (todos los ViewModel)
 **Autor:** Jonas · **Rama:** `integracion/app-completa`
