@@ -75,6 +75,7 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Regiones y comunas fijas en `model/Regiones.kt` | El MER las guarda como texto en `direccion`; no hay tabla. Selectores dependientes (CU-10) |
 | Calle y número en campos separados | Así están en la entidad `Direccion` de Jonas |
 | `AppDatabase` como singleton (`getDatabase`) | Abrir la base es costoso; una sola instancia evita conexiones duplicadas al mismo archivo |
+| Datos semilla (admin + catálogo de prueba) en `Callback.onCreate` | Se insertan una sola vez al crear la base; ids escritos a mano para que las FK calcen |
 | Cuenta admin creada en `Callback.onCreate` | Se ejecuta una sola vez, al crear la base; así la cuenta existe desde el primer inicio (cuenta preexistente) |
 | `fallbackToDestructiveMigration` (solo desarrollo) | Si cambia una entidad y se sube `version`, la base se recrea en vez de fallar; en producción se usarían migraciones |
 | Gradle JVM en 21 | Es el JDK que trae Android Studio; con 25 Gradle tomaba el JRE de VS Code, que no sirve para compilar |
@@ -118,6 +119,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — Datos semilla del catálogo
+**Autor:** Jonas · **Rama:** `feature/datos-semilla`
+
+- **Qué:** en `AppDatabase`, el callback `onCreate` (ahora `datosInicialesCallback`) inserta además 4 categorías y 8 productos de prueba (sin imágenes). El RUT del admin queda con formato `11.111.111-1`, igual al del registro.
+- **Por qué:** la base solo tenía al admin; sin productos, el catálogo con Room se vería vacío. Los productos reales los creará el admin desde Gestión de contenido (CU-32).
+- **Conecta con:** `ProductoDao.observarActivos` y `CategoriaDao.observarTodas`, que usará el `CatalogoViewModel`.
+- **Pendiente:** el callback solo corre al crear la base: hay que desinstalar la app para verlos. Imágenes reales de los productos.
 
 ### 2026-10-27 — Registro con Room (RegistroViewModel)
 **Autor:** Jonas · **Rama:** `feature/registro-viewmodel`
