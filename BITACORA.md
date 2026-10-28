@@ -24,7 +24,7 @@ com.example.artesaniasaleo
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
-├── viewmodel/            ⬜ LoginViewModel, RegistroViewModel, CatalogoViewModel...  ← SIGUIENTE
+├── viewmodel/            🔄 AppViewModelFactory, SesionViewModel, LoginViewModel · ⬜ RegistroViewModel...  ← SIGUIENTE
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
@@ -32,7 +32,7 @@ com.example.artesaniasaleo
 │   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral
-│   └── utils/            ⬜ WindowSizeUtils.kt
+│   └── utils/            🔄 Validaciones.kt (correo, RUT) · ⬜ WindowSizeUtils.kt
 ├── navigation/           🔄 Rutas, AppNavegacion (NavHost + menú lateral), EstadoDemo (provisional)
 └── MainActivity.kt
 ```
@@ -92,6 +92,12 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Un solo `EstadoPedido` (enum en `model/`) | Una sola fuente de verdad; en la BD se guarda su `etiqueta` (texto), que coincide con el SQL y la entidad `Pedido` |
 | `lifecycle-viewmodel-compose` con la misma versión que `lifecycle-runtime-ktx` | Las librerías de lifecycle deben ir en la misma versión; `viewModel()` crea el ViewModel dentro de un Composable |
 | `material3-window-size-class` sin versión | La toma del Compose BOM; se usará en `WindowSizeUtils` (Guía 9) para la grilla adaptable |
+| Una sola `AppViewModelFactory` (sin Hilt) | Los ViewModel reciben su repository por constructor; la Factory los arma y comparte la misma BD y DataStore |
+| `EstadoOperacion` (sealed class) reutilizable | Cargando / Exito / Error de cualquier operación; reemplaza los `cargando`, `errorGeneral` y `...Exitoso` sueltos de cada UiState |
+| La sesión decide la navegación (`LaunchedEffect(sesion)`) | Login y registro solo guardan la sesión; un único observador lleva al catálogo/resumen o al login. Si hay sesión guardada, la app abre directo |
+| `SesionViewModel` fuera del NavHost | Vive con la Activity: el rol (menú) y cerrar sesión se comparten en todas las pantallas |
+| Usuario bloqueado = sin sesión | Si el admin bloquea una cuenta, `SesionViewModel` la saca al login |
+| Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
 
 ---
 
@@ -109,6 +115,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-27 — Factory, sesión y login con Room
+**Autor:** Jonas · **Rama:** `feature/login-viewmodel`
+
+- **Qué:** en `viewmodel/` se crearon `AppViewModelFactory`, `SesionViewModel` (lee `usuarioActual`: sin sesión / activa con `esAdmin` según `usuario.rol`) y `LoginViewModel`. En `model/`: `EstadoOperacion` y `EstadoSesion` (sealed class); `LoginUiState` deja solo campos y errores. `PantallaLogin` recibe `operacion`. `AppNavegacion` abre según la sesión guardada y navega al cambiar la sesión. Validaciones movidas a `ui/utils/Validaciones.kt`.
+- **Por qué:** el login deja de ser demo: valida contra Room (CU-05) y guarda la sesión en DataStore; el menú usa el rol real.
+- **Conecta con:** `UsuarioRepository` (login, usuarioActual, cerrarSesion); `EstadoDemo` ya no tiene login ni `esAdmin`.
+- **Pendiente:** `RegistroViewModel` (el registro demo aún entra sin sesión real); usar `EstadoOperacion` en Registro y Catálogo.
 
 ### 2026-10-27 — Correcciones de la revisión y dependencias para ViewModel
 **Autor:** Jonas · **Rama:** `fix/revision`
