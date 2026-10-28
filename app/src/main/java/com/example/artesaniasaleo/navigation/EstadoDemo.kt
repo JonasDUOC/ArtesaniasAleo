@@ -3,7 +3,6 @@ package com.example.artesaniasaleo.navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.example.artesaniasaleo.model.CATEGORIAS_DEMO
 import com.example.artesaniasaleo.model.CatalogoUiState
 import com.example.artesaniasaleo.model.CategoriaFormUiState
 import com.example.artesaniasaleo.model.CategoriaUi
@@ -12,7 +11,6 @@ import com.example.artesaniasaleo.model.EstadoPedido
 import com.example.artesaniasaleo.model.LineaPedido
 import com.example.artesaniasaleo.model.PEDIDOS_DEMO
 import com.example.artesaniasaleo.model.PERFIL_DEMO
-import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
 import com.example.artesaniasaleo.model.PedidoUi
 import com.example.artesaniasaleo.model.ProductoFormUiState
 import com.example.artesaniasaleo.model.ProductoUi
@@ -24,15 +22,18 @@ import com.example.artesaniasaleo.ui.utils.esCorreoValido
 // PROVISIONAL: guarda los datos en memoria y valida, para que la app funcione completa.
 // Cuando existan los ViewModel y el repository (con Jonas), cada parte pasa a su ViewModel
 // y los datos se leen y guardan en Room. Las pantallas no cambian.
-// Ya migrado: login y sesión → LoginViewModel y SesionViewModel; registro → RegistroViewModel.
+// Ya migrado: login y sesión → LoginViewModel y SesionViewModel; registro → RegistroViewModel;
+// catálogo, búsqueda, detalle, favoritos y categorías → CatalogoViewModel.
+// `catalogo` y `categorias` siguen aquí solo para el carrito y la gestión de contenido:
+// AppNavegacion les copia los datos de Room (puente provisional).
 class EstadoDemo {
     var recuperar by mutableStateOf(RecuperarUiState())
-    var catalogo by mutableStateOf(CatalogoUiState(productos = PRODUCTOS_DEMO))
+    var catalogo by mutableStateOf(CatalogoUiState())
     var perfil by mutableStateOf(PERFIL_DEMO)
     var pagoCompra by mutableStateOf(DatosPagoUiState())
     var carrito by mutableStateOf(mapOf<Int, Int>())   // id del producto -> cantidad
     var pedidos by mutableStateOf(PEDIDOS_DEMO)
-    var categorias by mutableStateOf(CATEGORIAS_DEMO)
+    var categorias by mutableStateOf(listOf<CategoriaUi>())
     var usuarios by mutableStateOf(USUARIOS_DEMO)
     var formCategoria by mutableStateOf(CategoriaFormUiState())
     var formProducto by mutableStateOf(ProductoFormUiState())
@@ -42,9 +43,6 @@ class EstadoDemo {
     // ---------- Consultas ----------
 
     fun producto(id: Int): ProductoUi? = catalogo.productos.find { it.id == id }
-
-    val favoritos: List<ProductoUi>
-        get() = catalogo.productos.filter { it.esFavorito }
 
     val itemsCarrito: List<Pair<ProductoUi, Int>>
         get() = carrito.mapNotNull { (id, cantidad) -> producto(id)?.let { it to cantidad } }
@@ -65,13 +63,7 @@ class EstadoDemo {
         return error == null
     }
 
-    // ---------- Catálogo, favoritos y carrito ----------
-
-    fun alternarFavorito(id: Int) {
-        catalogo = catalogo.copy(
-            productos = catalogo.productos.map { if (it.id == id) it.copy(esFavorito = !it.esFavorito) else it }
-        )
-    }
+    // ---------- Carrito ----------
 
     fun agregarAlCarrito(id: Int) = cambiarCantidad(id, 1)
 

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.artesaniasaleo.model.CatalogoUiState
+import com.example.artesaniasaleo.model.EstadoOperacion
 import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
 import com.example.artesaniasaleo.ui.components.BarraSuperior
 import com.example.artesaniasaleo.ui.components.TarjetaProducto
@@ -36,6 +37,7 @@ import com.example.artesaniasaleo.ui.theme.ArtesaniasAleoTheme
 @Composable
 fun PantallaCatalogo(
     estado: CatalogoUiState,
+    carga: EstadoOperacion,           // Cargando / Exito / Error, viene del CatalogoViewModel
     onBusquedaChange: (String) -> Unit,
     onProductoClick: (Int) -> Unit,   // recibe el id del producto
     onFavoritoClick: (Int) -> Unit,
@@ -64,9 +66,9 @@ fun PantallaCatalogo(
             Buscador(valor = estado.busqueda, onValorChange = onBusquedaChange)
 
             when {
-                estado.cargando -> Centrado { CircularProgressIndicator() }
-                estado.errorGeneral != null -> Centrado {
-                    Text(estado.errorGeneral, color = MaterialTheme.colorScheme.error)
+                carga is EstadoOperacion.Cargando -> Centrado { CircularProgressIndicator() }
+                carga is EstadoOperacion.Error -> Centrado {
+                    Text(carga.mensaje, color = MaterialTheme.colorScheme.error)
                 }
                 estado.productosFiltrados.isEmpty() -> Text(
                     text = "Sin resultados",
@@ -130,6 +132,7 @@ private fun VistaCatalogo() {
     ArtesaniasAleoTheme {
         PantallaCatalogo(
             estado = CatalogoUiState(productos = PRODUCTOS_DEMO),
+            carga = EstadoOperacion.Exito,
             onBusquedaChange = {}, onProductoClick = {}, onFavoritoClick = {}, onInicio = {}, onMenu = {}
         )
     }
@@ -141,6 +144,7 @@ private fun VistaCatalogoSinResultados() {
     ArtesaniasAleoTheme {
         PantallaCatalogo(
             estado = CatalogoUiState(busqueda = "mesa", productos = PRODUCTOS_DEMO),
+            carga = EstadoOperacion.Exito,
             onBusquedaChange = {}, onProductoClick = {}, onFavoritoClick = {}, onInicio = {}, onMenu = {}
         )
     }
