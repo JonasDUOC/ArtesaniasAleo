@@ -27,6 +27,9 @@ object Rutas {
     const val USUARIOS = "usuarios"
     const val EDITAR_USUARIO = "editar_usuario/{id}"
 
+    // Pantallas que se ven sin sesión iniciada; todas las demás exigen sesión
+    val SIN_SESION = setOf(LOGIN, REGISTRO, TERMINOS, RECUPERAR)
+
     // Arman la ruta con el id real, por ejemplo "detalle/3"
     fun categoria(id: Int) = "categoria/$id"
     fun detalle(id: Int) = "detalle/$id"
