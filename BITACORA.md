@@ -24,7 +24,7 @@ com.example.artesaniasaleo
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, ProductosDemo
-├── viewmodel/            🔄 AppViewModelFactory, SesionViewModel, LoginViewModel, RegistroViewModel · ⬜ Recuperar, Catalogo...  ← SIGUIENTE
+├── viewmodel/            🔄 Factory, Sesion, Login, Registro, Catalogo · ⬜ Carrito, Perfil, Pedidos, Admin, Recuperar  ← SIGUIENTE
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
@@ -101,6 +101,9 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Registro: `correoDisponible()` en la etapa 1 | CU-01 pide avisar del correo ya registrado antes de pedir el código, no al final |
 | Registro sin navegación propia | `registrar()` guarda la sesión y el mismo observador de sesión lleva al catálogo (CU-03: inicia sesión automáticamente) |
 | `RegistroViewModel` dentro de `composable(REGISTRO)` | Sigue vivo al ir a Términos y volver, así no se pierde lo escrito (CU-04) |
+| `CatalogoViewModel` compartido (fuera del NavHost) | Inicio, Detalle, Categorías y Favoritos usan la misma lista de Room (ViewModel compartido, Guía 11) |
+| `combine` de productos + favoritos + categorías | Cualquier cambio en Room (favorito, producto, categoría) recalcula el estado y redibuja todas las pantallas |
+| Búsqueda en su propio `StateFlow` | El TextField se actualiza al instante; el filtrado se calcula en `CatalogoUiState` |
 | Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
 
 ---
@@ -119,6 +122,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — Catálogo con Room (CatalogoViewModel)
+**Autor:** Jonas · **Rama:** `feature/catalogo-viewmodel`
+
+- **Qué:** en `viewmodel/` se creó `CatalogoViewModel` (une con `combine` productos activos, ids de favoritos del usuario y categorías; convierte `ProductoConImagenes` → `ProductoUi`). `CatalogoUiState` suma `categorias`, `favoritos`, `producto(id)`, `productosDeCategoria(id)` (por precio) y busca también en la descripción; deja `cargando`/`errorGeneral` (ahora `EstadoOperacion`). `PantallaCatalogo` recibe `carga`. Inicio, Detalle, Categorías y Favoritos leen de Room.
+- **Por qué:** CU-12 a CU-19 con datos reales; un favorito marcado en una pantalla se ve en todas porque todas leen la misma consulta.
+- **Conecta con:** `ProductoRepository`, `CategoriaRepository`, `FavoritoRepository` y `UsuarioRepository.usuarioIdSesion`.
+- **Pendiente:** puente provisional en `AppNavegacion` que copia productos y categorías de Room a `EstadoDemo` (carrito y gestión de contenido); botón para ordenar por precio descendente (CU-15) en `PantallaCategoria` (Maxi).
 
 ### 2026-10-28 — Datos semilla del catálogo
 **Autor:** Jonas · **Rama:** `feature/datos-semilla`
