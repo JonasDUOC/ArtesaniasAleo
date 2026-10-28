@@ -57,6 +57,7 @@ import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaPedido
 import com.example.artesaniasaleo.ui.screens.seguimiento.PantallaSeguimiento
 import com.example.artesaniasaleo.ui.screens.terminos.PantallaTerminos
 import com.example.artesaniasaleo.viewmodel.AppViewModelFactory
+import com.example.artesaniasaleo.viewmodel.CatalogoViewModel
 import com.example.artesaniasaleo.viewmodel.LoginViewModel
 import com.example.artesaniasaleo.viewmodel.RegistroViewModel
 import com.example.artesaniasaleo.viewmodel.SesionViewModel
@@ -92,6 +93,21 @@ private fun NavegacionPrincipal(
 ) {
     val navController = rememberNavController() // recuerda en qué pantalla estamos y el historial
     val estado = remember { EstadoDemo() }      // provisional, hasta tener los ViewModel
+
+    // Compartido por Inicio, Detalle, Categorías y Favoritos: se crea fuera del NavHost
+    // para que todas esas pantallas usen la misma instancia (y la misma lista de Room)
+    val catalogoViewModel: CatalogoViewModel = viewModel(factory = fabrica)
+    val catalogo by catalogoViewModel.uiState.collectAsState()
+    val busqueda by catalogoViewModel.busqueda.collectAsState()
+    val cargaCatalogo by catalogoViewModel.carga.collectAsState()
+
+    // PUENTE PROVISIONAL: el carrito y la gestión de contenido todavía usan EstadoDemo.
+    // Les copiamos los productos y categorías de Room para que trabajen con los mismos ids.
+    // Se borra cuando existan CarritoViewModel y AdminViewModel.
+    LaunchedEffect(catalogo) {
+        estado.catalogo = estado.catalogo.copy(productos = catalogo.productos)
+        estado.categorias = catalogo.categorias
+    }
     val contexto = LocalContext.current
     val menu = rememberDrawerState(DrawerValue.Closed)
     val alcance = rememberCoroutineScope()      // abrir y cerrar el menú es una animación (corrutina)
@@ -225,10 +241,11 @@ private fun NavegacionPrincipal(
 
             composable(Rutas.CATALOGO) {
                 PantallaCatalogo(
-                    estado = estado.catalogo,
-                    onBusquedaChange = { estado.catalogo = estado.catalogo.copy(busqueda = it) },
+                    estado = catalogo.copy(busqueda = busqueda), // la búsqueda viene en su propio StateFlow
+                    carga = cargaCatalogo,
+                    onBusquedaChange = catalogoViewModel::onBusquedaChange,
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = estado::alternarFavorito,
+                    onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onInicio = {},        // ya estamos en Inicio
                     onMenu = abrirMenu
                 )
@@ -237,10 +254,11 @@ private fun NavegacionPrincipal(
             // El id viaja dentro de la ruta ("detalle/3") y se lee aquí como número
             composable(Rutas.DETALLE, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
                 val id = entrada.arguments?.getInt("id") ?: 0
-                val producto = estado.producto(id) ?: return@composable
+                // Mientras Room no entrega la lista, todavía no hay producto que mostrar
+                val producto = catalogo.producto(id) ?: return@composable
                 PantallaDetalle(
                     producto = producto,
-                    onFavoritoClick = { estado.alternarFavorito(id) },
+                    onFavoritoClick = { catalogoViewModel.alternarFavorito(id) },
                     onAgregarCarrito = {
                         estado.agregarAlCarrito(id)
                         aviso("Agregado al carrito")
@@ -252,7 +270,7 @@ private fun NavegacionPrincipal(
 
             composable(Rutas.CATEGORIAS) {
                 PantallaCategorias(
-                    categorias = estado.categorias,
+                    categorias = catalogo.categorias,
                     onCategoriaClick = { navController.navigate(Rutas.categoria(it)) },
                     onInicio = irAInicio,
                     onMenu = abrirMenu
@@ -262,10 +280,10 @@ private fun NavegacionPrincipal(
             composable(Rutas.CATEGORIA, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
                 val id = entrada.arguments?.getInt("id") ?: 0
                 PantallaCategoria(
-                    nombre = estado.categorias.find { it.id == id }?.nombre ?: "Categoría",
-                    productos = estado.catalogo.productos.filter { it.categoriaId == id },
+                    nombre = catalogo.nombreCategoria(id),
+                    productos = catalogo.productosDeCategoria(id), // ordenados por precio (CU-15)
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = estado::alternarFavorito,
+                    onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onVolver = volver,
                     onMenu = abrirMenu
                 )
@@ -273,9 +291,9 @@ private fun NavegacionPrincipal(
 
             composable(Rutas.FAVORITOS) {
                 PantallaFavoritos(
-                    favoritos = estado.favoritos,
+                    favoritos = catalogo.favoritos,
                     onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = estado::alternarFavorito,
+                    onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onInicio = irAInicio,
                     onMenu = abrirMenu
                 )
