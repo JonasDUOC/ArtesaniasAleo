@@ -1,15 +1,14 @@
 package com.example.artesaniasaleo.model
 
+// Solo lo que escribe el usuario y los errores de cada campo.
+// Cómo va el proceso (cargando / error / éxito) está en EstadoOperacion.
 data class LoginUiState(
     val correo: String = "",
     val contrasena: String = "",
     val errorCorreo: String? = null,
-    val errorContrasena: String? = null,
-    val errorGeneral: String? = null, // ej.: "Correo o contraseña incorrectos"
-    val cargando: Boolean = false,
-    val loginExitoso: Boolean = false
+    val errorContrasena: String? = null
 ) {
-    // El botón "Ingresar" solo se habilita con ambos campos llenos y sin carga en curso
-    val puedeEnviar: Boolean
-        get() = correo.isNotBlank() && contrasena.isNotBlank() && !cargando
+    // Ambos campos llenos (la pantalla además lo deshabilita mientras carga)
+    val camposCompletos: Boolean
+        get() = correo.isNotBlank() && contrasena.isNotBlank()
 }
