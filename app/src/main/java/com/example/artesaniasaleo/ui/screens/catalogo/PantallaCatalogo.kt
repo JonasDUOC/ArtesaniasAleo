@@ -43,7 +43,8 @@ fun PantallaCatalogo(
     onFavoritoClick: (Int) -> Unit,
     onInicio: () -> Unit,
     onMenu: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    columnas: Int = 2 // 2, 3 o 4 según WindowSizeUtils (Guía 9)
 ) {
     Scaffold(
         modifier = modifier,
@@ -78,7 +79,7 @@ fun PantallaCatalogo(
                 )
                 // Lazy: solo dibuja las tarjetas visibles, aunque haya muchos productos
                 else -> LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(columnas),
                     contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

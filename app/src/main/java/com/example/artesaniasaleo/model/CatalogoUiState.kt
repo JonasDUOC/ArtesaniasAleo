@@ -23,9 +23,11 @@ data class CatalogoUiState(
     // CU-16: detalle de un producto
     fun producto(id: Int): ProductoUi? = productos.find { it.id == id }
 
-    // CU-14 y CU-15: productos de una categoría, ordenados por precio (menor a mayor)
-    fun productosDeCategoria(categoriaId: Int): List<ProductoUi> =
-        productos.filter { it.categoriaId == categoriaId }.sortedBy { it.precio }
+    // CU-14 y CU-15: productos de una categoría, ordenados por precio
+    fun productosDeCategoria(categoriaId: Int, ascendente: Boolean = true): List<ProductoUi> {
+        val deLaCategoria = productos.filter { it.categoriaId == categoriaId }
+        return if (ascendente) deLaCategoria.sortedBy { it.precio } else deLaCategoria.sortedByDescending { it.precio }
+    }
 
     fun nombreCategoria(categoriaId: Int): String =
         categorias.find { it.id == categoriaId }?.nombre ?: "Categoría"

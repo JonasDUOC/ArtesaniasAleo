@@ -1,6 +1,7 @@
 package com.example.artesaniasaleo.ui.utils
 
 import com.example.artesaniasaleo.model.DatosPagoUiState
+import java.time.YearMonth
 
 // Validaciones de formularios en un solo lugar (antes estaban dentro de EstadoDemo).
 // Son funciones puras: no usan Android, así se podrán probar con pruebas unitarias (Unidad 3).
@@ -30,9 +31,20 @@ fun esRutValido(rut: String): Boolean {
 // CU-11: devuelve la tarjeta con los errores de cada campo (null = campo correcto)
 fun validarTarjeta(pago: DatosPagoUiState): DatosPagoUiState = pago.copy(
     errorNumero = if (pago.numero.length == 16 && pago.numero.all { it.isDigit() }) null else "Debe tener 16 dígitos",
-    errorVencimiento = if (Regex("""(0[1-9]|1[0-2])/\d{2}""").matches(pago.vencimiento)) null else "Formato MM/AA",
+    errorVencimiento = when {
+        !Regex("""(0[1-9]|1[0-2])/\d{2}""").matches(pago.vencimiento) -> "Formato MM/AA"
+        estaVencida(pago.vencimiento) -> "La tarjeta está vencida"
+        else -> null
+    },
     errorCvv = if (pago.cvv.length in 3..4 && pago.cvv.all { it.isDigit() }) null else "3 o 4 dígitos"
 )
 
 fun tarjetaSinErrores(pago: DatosPagoUiState): Boolean =
     pago.errorNumero == null && pago.errorVencimiento == null && pago.errorCvv == null
+
+// "MM/AA" → mes y año. La tarjeta sirve hasta el último día de ese mes,
+// así que solo está vencida si ese mes ya pasó
+private fun estaVencida(vencimiento: String): Boolean {
+    val (mes, anio) = vencimiento.split("/").map { it.toInt() }
+    return YearMonth.of(2000 + anio, mes).isBefore(YearMonth.now())
+}

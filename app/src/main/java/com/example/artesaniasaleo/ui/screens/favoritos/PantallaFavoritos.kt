@@ -21,7 +21,8 @@ fun PantallaFavoritos(
     onFavoritoClick: (Int) -> Unit,
     onInicio: () -> Unit,
     onMenu: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    columnas: Int = 2
 ) {
     Scaffold(
         modifier = modifier,
@@ -33,6 +34,7 @@ fun PantallaFavoritos(
             mensajeVacio = "Aún no tienes favoritos.",
             onProductoClick = onProductoClick,
             onFavoritoClick = onFavoritoClick,
+            columnas = columnas,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(espacioBarra)

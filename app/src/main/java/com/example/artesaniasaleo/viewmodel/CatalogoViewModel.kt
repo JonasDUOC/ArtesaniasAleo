@@ -41,6 +41,10 @@ class CatalogoViewModel(
     private val _busqueda = MutableStateFlow("")
     val busqueda: StateFlow<String> = _busqueda.asStateFlow()
 
+    // CU-15: orden por precio dentro de una categoría (true = menor a mayor)
+    private val _ordenAscendente = MutableStateFlow(true)
+    val ordenAscendente: StateFlow<Boolean> = _ordenAscendente.asStateFlow()
+
     // Cargando hasta que Room entregue la primera lista; Error si algo falla (CU-12, excepción)
     private val _carga = MutableStateFlow<EstadoOperacion>(EstadoOperacion.Cargando)
     val carga: StateFlow<EstadoOperacion> = _carga.asStateFlow()
@@ -78,6 +82,10 @@ class CatalogoViewModel(
 
     fun onBusquedaChange(texto: String) {
         _busqueda.value = texto
+    }
+
+    fun cambiarOrden() {
+        _ordenAscendente.value = !_ordenAscendente.value
     }
 
     // CU-17 y CU-18: marcar o desmarcar. Solo se escribe en Room; la lista se actualiza sola.
