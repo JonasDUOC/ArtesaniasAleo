@@ -61,7 +61,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "artesanias_aleyleo.db"
                 )
-                    .addCallback(crearAdminCallback)
+                    .addCallback(datosInicialesCallback)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instancia
@@ -69,23 +69,59 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        private val crearAdminCallback = object : RoomDatabase.Callback() {
+        // Se ejecuta UNA sola vez: cuando Room crea el archivo de la base de datos
+        // (primera instalación, o después de desinstalar la app).
+        private val datosInicialesCallback = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                val ahora = System.currentTimeMillis()
-                db.execSQL(
-                    """
-                    INSERT INTO usuario (correo, contrasenia, rol, estado, fechaRegistro)
-                    VALUES ('admin@aleyleo.cl', 'admin123', 'admin', 'activo', $ahora)
-                    """
-                )
-                db.execSQL(
-                    """
-                    INSERT INTO perfil_usuario (usuarioId, rut, nombre, apellido)
-                    VALUES (1, '11111111-1', 'Administradora', 'Ale y Leo')
-                    """
-                )
+                insertarAdmin(db)
+                insertarCatalogo(db)
             }
+        }
+
+        // Cuenta de administrador preexistente (id 1)
+        private fun insertarAdmin(db: SupportSQLiteDatabase) {
+            val ahora = System.currentTimeMillis()
+            db.execSQL(
+                """
+                INSERT INTO usuario (correo, contrasenia, rol, estado, fechaRegistro)
+                VALUES ('admin@aleyleo.cl', 'admin123', 'admin', 'activo', $ahora)
+                """
+            )
+            db.execSQL(
+                """
+                INSERT INTO perfil_usuario (usuarioId, rut, nombre, apellido)
+                VALUES (1, '11.111.111-1', 'Administradora', 'Ale y Leo')
+                """
+            )
+        }
+
+        // Datos de prueba (sintéticos) para que el catálogo no parta vacío.
+        // Los ids se escriben a mano para que cada producto apunte a su categoría.
+        // Sin imágenes por ahora: la tarjeta muestra el degradado provisional.
+        private fun insertarCatalogo(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                INSERT INTO categoria (id, nombre) VALUES
+                (1, 'Cerámica'),
+                (2, 'Tejidos'),
+                (3, 'Madera'),
+                (4, 'Joyería')
+                """
+            )
+            db.execSQL(
+                """
+                INSERT INTO producto (id, categoriaId, titulo, descripcion, precio, estado) VALUES
+                (1, 1, 'Jarrón de greda', 'Pieza única elaborada con técnica de greda cocida y pintura mineral. 24 cm de alto x 14 cm de diámetro.', 18500, 'activo'),
+                (2, 1, 'Taza esmaltada', 'Taza de cerámica modelada a mano con esmalte azul. Capacidad 300 ml.', 7900, 'activo'),
+                (3, 2, 'Chal de lana', 'Tejido a telar con lana de oveja teñida naturalmente. 180 x 60 cm.', 12000, 'activo'),
+                (4, 2, 'Manta de telar', 'Manta tejida en telar mapuche con diseños tradicionales. 200 x 140 cm.', 34900, 'activo'),
+                (5, 3, 'Cuchara tallada', 'Cuchara de servir tallada a mano en madera de raulí.', 6500, 'activo'),
+                (6, 3, 'Tabla para picar', 'Tabla de raulí curada con aceite de linaza. 40 x 25 cm.', 14500, 'activo'),
+                (7, 4, 'Anillo de plata', 'Anillo artesanal en plata 950 con piedra natural.', 15900, 'activo'),
+                (8, 4, 'Aros de cobre', 'Aros martillados a mano en cobre con baño de plata.', 9900, 'activo')
+                """
+            )
         }
     }
 }
