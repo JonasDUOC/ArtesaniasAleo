@@ -17,6 +17,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -122,6 +125,7 @@ private fun NavegacionPrincipal(
     val cantidadCarrito by carritoViewModel.cantidadTotal.collectAsState()
     val pagoCompra by carritoViewModel.pago.collectAsState()
     val compra by carritoViewModel.compra.collectAsState()
+    val mensajeCarrito by carritoViewModel.mensaje.collectAsState()
 
     val pedidosViewModel: PedidosViewModel = viewModel(factory = fabrica)
     val misPedidos by pedidosViewModel.misPedidos.collectAsState()
@@ -188,6 +192,14 @@ private fun NavegacionPrincipal(
         }
     }
 
+    // Mensajes del carrito: "Agregado al carrito" o el motivo si no se pudo (ej.: sin stock)
+    LaunchedEffect(mensajeCarrito) {
+        mensajeCarrito?.let {
+            aviso(it)
+            carritoViewModel.mensajeMostrado()
+        }
+    }
+
     // Mensajes del panel de administración (eliminar, bloquear, guardar...)
     LaunchedEffect(mensajeAdmin) {
         mensajeAdmin?.let {
@@ -230,365 +242,374 @@ private fun NavegacionPrincipal(
         })
     )
 
-    // El menú lateral envuelve a todas las pantallas; solo se abre con el ícono de menú
-    ModalNavigationDrawer(
-        drawerState = menu,
-        gesturesEnabled = menu.isOpen,
-        drawerContent = { MenuLateral(opcionesMenu) }
-    ) {
-        NavHost(navController = navController, startDestination = destinoInicial) {
-
-            // ---------- Sin sesión ----------
-
-            composable(Rutas.LOGIN) {
-                // Creado dentro de composable(): vive mientras el login esté en el historial
-                val loginViewModel: LoginViewModel = viewModel(factory = fabrica)
-                val uiState by loginViewModel.uiState.collectAsState()
-                val operacion by loginViewModel.operacion.collectAsState()
-                PantallaLogin(
-                    estado = uiState,
-                    operacion = operacion,
-                    onCorreoChange = loginViewModel::onCorreoChange,
-                    onContrasenaChange = loginViewModel::onContrasenaChange,
-                    // No navega aquí: al guardarse la sesión, LaunchedEffect(sesion) lleva a la pantalla base
-                    onIniciarSesion = loginViewModel::iniciarSesion,
-                    onCrearCuenta = { navController.navigate(Rutas.REGISTRO) },
-                    onOlvideContrasena = { navController.navigate(Rutas.RECUPERAR) }
-                )
-            }
-
-            composable(Rutas.REGISTRO) {
-                // Vive mientras el registro esté en el historial: si vas a Términos y vuelves,
-                // lo escrito se conserva (CU-04)
-                val registroViewModel: RegistroViewModel = viewModel(factory = fabrica)
-                val uiState by registroViewModel.uiState.collectAsState()
-                val operacion by registroViewModel.operacion.collectAsState()
-                // Mensaje al crear la cuenta; la navegación al catálogo la hace LaunchedEffect(sesion)
-                LaunchedEffect(operacion) {
-                    if (operacion is EstadoOperacion.Exito) aviso("Cuenta creada con éxito")
+    // El menú lateral envuelve a todas las pantallas; solo se abre con el ícono de menú.
+    // Compose solo abre el drawer desde el lado "inicial" (izquierda). Para que salga desde la
+    // DERECHA, donde está el ícono de menú, se invierte la dirección (Rtl) solo para el drawer
+    // y se vuelve a Ltr para su contenido y para las pantallas, así el texto no queda al revés.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        ModalNavigationDrawer(
+            drawerState = menu,
+            gesturesEnabled = menu.isOpen,
+            drawerContent = {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    MenuLateral(opcionesMenu)
                 }
-                PantallaRegistro(
-                    estado = uiState,
-                    operacion = operacion,
-                    onEstadoChange = registroViewModel::onEstadoChange,
-                    onContinuar = registroViewModel::continuar,
-                    // En la etapa 2 o 3 retrocede una etapa; en la 1 vuelve al login
-                    onVolver = { if (!registroViewModel.retroceder()) volver() },
-                    onVerTerminos = { navController.navigate(Rutas.TERMINOS) }
-                )
             }
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                NavHost(navController = navController, startDestination = destinoInicial) {
 
-            composable(Rutas.TERMINOS) { PantallaTerminos(onVolver = volver) }
+                    // ---------- Sin sesión ----------
 
-            composable(Rutas.RECUPERAR) {
-                val recuperarViewModel: RecuperarViewModel = viewModel(factory = fabrica)
-                val uiState by recuperarViewModel.uiState.collectAsState()
-                val operacion by recuperarViewModel.operacion.collectAsState()
-                // Contraseña cambiada → aviso y de vuelta al login para entrar con la nueva
-                LaunchedEffect(operacion) {
-                    if (operacion is EstadoOperacion.Exito) {
-                        aviso("Contraseña actualizada. Inicia sesión")
-                        recuperarViewModel.operacionMostrada()
-                        volver()
-                    }
-                }
-                PantallaRecuperar(
-                    estado = uiState,
-                    operacion = operacion,
-                    onCorreoChange = recuperarViewModel::onCorreoChange,
-                    onCodigoChange = recuperarViewModel::onCodigoChange,
-                    onNuevaChange = recuperarViewModel::onNuevaChange,
-                    onConfirmarChange = recuperarViewModel::onConfirmarChange,
-                    onContinuar = recuperarViewModel::continuar,
-                    // En la etapa 2 vuelve a la 1; en la 1 vuelve al login
-                    onVolver = { if (!recuperarViewModel.retroceder()) volver() }
-                )
-            }
-
-            // ---------- Cliente ----------
-
-            composable(Rutas.CATALOGO) {
-                PantallaCatalogo(
-                    estado = catalogo.copy(busqueda = busqueda), // la búsqueda viene en su propio StateFlow
-                    carga = cargaCatalogo,
-                    onBusquedaChange = catalogoViewModel::onBusquedaChange,
-                    onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = catalogoViewModel::alternarFavorito,
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu,
-                    columnas = columnas,
-                    onEscanear = { navController.navigate(Rutas.ESCANEAR_QR) }
-                )
-            }
-
-            // El id viaja dentro de la ruta ("detalle/3") y se lee aquí como número
-            composable(Rutas.DETALLE, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
-                val id = entrada.arguments?.getInt("id") ?: 0
-                // Mientras Room no entrega la lista, todavía no hay producto que mostrar
-                val producto = catalogo.producto(id) ?: return@composable
-                PantallaDetalle(
-                    producto = producto,
-                    onFavoritoClick = { catalogoViewModel.alternarFavorito(id) },
-                    onAgregarCarrito = {
-                        carritoViewModel.agregar(id)
-                        aviso("Agregado al carrito")
-                    },
-                    onVolver = volver,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.CATEGORIAS) {
-                PantallaCategorias(
-                    categorias = catalogo.categorias,
-                    onCategoriaClick = { navController.navigate(Rutas.categoria(it)) },
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.CATEGORIA, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
-                val id = entrada.arguments?.getInt("id") ?: 0
-                PantallaCategoria(
-                    nombre = catalogo.nombreCategoria(id),
-                    productos = catalogo.productosDeCategoria(id, ordenAscendente), // CU-15
-                    onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = catalogoViewModel::alternarFavorito,
-                    onVolver = volver,
-                    onMenu = abrirMenu,
-                    ordenAscendente = ordenAscendente,
-                    onCambiarOrden = catalogoViewModel::cambiarOrden,
-                    columnas = columnas
-                )
-            }
-
-            composable(Rutas.FAVORITOS) {
-                PantallaFavoritos(
-                    favoritos = catalogo.favoritos,
-                    onProductoClick = { navController.navigate(Rutas.detalle(it)) },
-                    onFavoritoClick = catalogoViewModel::alternarFavorito,
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu,
-                    columnas = columnas
-                )
-            }
-
-            composable(Rutas.CARRITO) {
-                PantallaCarrito(
-                    items = itemsCarrito,
-                    onCambiarCantidad = carritoViewModel::cambiarCantidad,
-                    // Si no hay tarjeta, el resultado SinTarjeta lleva a "Datos de pago" (LaunchedEffect(compra))
-                    onConfirmarCompra = carritoViewModel::confirmarCompra,
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.DATOS_PAGO) {
-                PantallaDatosPago(
-                    pago = pagoCompra,
-                    onPagoChange = carritoViewModel::onPagoChange,
-                    onGuardarYConfirmar = carritoViewModel::guardarTarjetaYConfirmar,
-                    onVolver = volver,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.PERFIL) {
-                val perfilViewModel: PerfilViewModel = viewModel(factory = fabrica)
-                val perfil by perfilViewModel.uiState.collectAsState()
-                val operacion by perfilViewModel.operacion.collectAsState()
-                // CU-09/10/11: mensaje "Guardado con éxito" o el error al guardar
-                LaunchedEffect(operacion) {
-                    when (val resultado = operacion) {
-                        EstadoOperacion.Exito -> aviso("Datos guardados con éxito")
-                        is EstadoOperacion.Error -> aviso(resultado.mensaje)
-                        else -> return@LaunchedEffect
-                    }
-                    perfilViewModel.operacionMostrada()
-                }
-                PantallaPerfil(
-                    estado = perfil,
-                    onEstadoChange = perfilViewModel::onEstadoChange,
-                    onEditar = perfilViewModel::editar,
-                    onGuardar = perfilViewModel::guardar,
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.SEGUIMIENTO) {
-                PantallaSeguimiento(
-                    pedidos = misPedidos,
-                    onPedidoClick = { navController.navigate(Rutas.pedido(it)) },
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.PEDIDO, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
-                val id = entrada.arguments?.getInt("id") ?: 0
-                val pedido = misPedidos.find { it.id == id } ?: return@composable
-                PantallaPedido(pedido = pedido, onVolver = volver, onMenu = abrirMenu)
-            }
-
-            // Lectura QR: un solo escáner para las etiquetas de las piezas ("producto:3")
-            // y los paquetes ("pedido:1034"). Lo que abre depende del rol.
-            composable(Rutas.ESCANEAR_QR) {
-                // Creado dentro de composable(): cada vez que se abre la pantalla parte escaneando
-                val qrViewModel: QrViewModel = viewModel()
-                val estadoQr by qrViewModel.estado.collectAsState()
-
-                // Código válido → se navega y el escáner sale del historial (atrás no vuelve a la cámara)
-                LaunchedEffect(estadoQr) {
-                    val destino = when (val leido = estadoQr) {
-                        is EstadoQr.Producto -> if (esAdmin) {
-                            // Admin en el taller: abre la edición de la pieza
-                            adminViewModel.abrirFormProducto(leido.id)
-                            Rutas.FORM_PRODUCTO
-                        } else {
-                            Rutas.detalle(leido.id) // cliente en la feria: ficha de la pieza
-                        }
-                        is EstadoQr.Pedido ->
-                            if (esAdmin) Rutas.pedidoAdmin(leido.id) else Rutas.pedido(leido.id)
-                        else -> null
-                    }
-                    if (destino != null) {
-                        aviso("Código leído")
-                        navController.navigate(destino) { popUpTo(Rutas.ESCANEAR_QR) { inclusive = true } }
-                    }
-                }
-
-                PantallaEscanearQr(
-                    estado = estadoQr,
-                    onCodigoLeido = { texto ->
-                        qrViewModel.onCodigoLeido(
-                            texto = texto,
-                            existeProducto = { id ->
-                                if (esAdmin) productosAdmin.any { it.id == id } else catalogo.producto(id) != null
-                            },
-                            // El cliente solo puede abrir sus propios pedidos
-                            existePedido = { id ->
-                                if (esAdmin) todosLosPedidos.any { it.id == id } else misPedidos.any { it.id == id }
-                            }
+                    composable(Rutas.LOGIN) {
+                        // Creado dentro de composable(): vive mientras el login esté en el historial
+                        val loginViewModel: LoginViewModel = viewModel(factory = fabrica)
+                        val uiState by loginViewModel.uiState.collectAsState()
+                        val operacion by loginViewModel.operacion.collectAsState()
+                        PantallaLogin(
+                            estado = uiState,
+                            operacion = operacion,
+                            onCorreoChange = loginViewModel::onCorreoChange,
+                            onContrasenaChange = loginViewModel::onContrasenaChange,
+                            // No navega aquí: al guardarse la sesión, LaunchedEffect(sesion) lleva a la pantalla base
+                            onIniciarSesion = loginViewModel::iniciarSesion,
+                            onCrearCuenta = { navController.navigate(Rutas.REGISTRO) },
+                            onOlvideContrasena = { navController.navigate(Rutas.RECUPERAR) }
                         )
-                    },
-                    onReintentar = qrViewModel::reiniciar,
-                    onVolver = volver,
-                    onMenu = abrirMenu
-                )
-            }
+                    }
 
-            // ---------- Administrador ----------
+                    composable(Rutas.REGISTRO) {
+                        // Vive mientras el registro esté en el historial: si vas a Términos y vuelves,
+                        // lo escrito se conserva (CU-04)
+                        val registroViewModel: RegistroViewModel = viewModel(factory = fabrica)
+                        val uiState by registroViewModel.uiState.collectAsState()
+                        val operacion by registroViewModel.operacion.collectAsState()
+                        // Mensaje al crear la cuenta; la navegación al catálogo la hace LaunchedEffect(sesion)
+                        LaunchedEffect(operacion) {
+                            if (operacion is EstadoOperacion.Exito) aviso("Cuenta creada con éxito")
+                        }
+                        PantallaRegistro(
+                            estado = uiState,
+                            operacion = operacion,
+                            onEstadoChange = registroViewModel::onEstadoChange,
+                            onContinuar = registroViewModel::continuar,
+                            // En la etapa 2 o 3 retrocede una etapa; en la 1 vuelve al login
+                            onVolver = { if (!registroViewModel.retroceder()) volver() },
+                            onVerTerminos = { navController.navigate(Rutas.TERMINOS) }
+                        )
+                    }
 
-            composable(Rutas.RESUMEN) {
-                PantallaResumen(
-                    pedidosPendientes = pedidosPendientes,
-                    ventasHoy = ventasHoy,
-                    onPendientes = { navController.navigate(Rutas.NOTIFICACIONES) },
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
+                    composable(Rutas.TERMINOS) { PantallaTerminos(onVolver = volver) }
 
-            composable(Rutas.NOTIFICACIONES) {
-                PantallaNotificaciones(
-                    pedidos = todosLosPedidos,
-                    onPedidoClick = { navController.navigate(Rutas.pedidoAdmin(it)) },
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
+                    composable(Rutas.RECUPERAR) {
+                        val recuperarViewModel: RecuperarViewModel = viewModel(factory = fabrica)
+                        val uiState by recuperarViewModel.uiState.collectAsState()
+                        val operacion by recuperarViewModel.operacion.collectAsState()
+                        // Contraseña cambiada → aviso y de vuelta al login para entrar con la nueva
+                        LaunchedEffect(operacion) {
+                            if (operacion is EstadoOperacion.Exito) {
+                                aviso("Contraseña actualizada. Inicia sesión")
+                                recuperarViewModel.operacionMostrada()
+                                volver()
+                            }
+                        }
+                        PantallaRecuperar(
+                            estado = uiState,
+                            operacion = operacion,
+                            onCorreoChange = recuperarViewModel::onCorreoChange,
+                            onCodigoChange = recuperarViewModel::onCodigoChange,
+                            onNuevaChange = recuperarViewModel::onNuevaChange,
+                            onConfirmarChange = recuperarViewModel::onConfirmarChange,
+                            onContinuar = recuperarViewModel::continuar,
+                            // En la etapa 2 vuelve a la 1; en la 1 vuelve al login
+                            onVolver = { if (!recuperarViewModel.retroceder()) volver() }
+                        )
+                    }
 
-            composable(Rutas.PEDIDO_ADMIN, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
-                val id = entrada.arguments?.getInt("id") ?: 0
-                // Se busca en la lista observada: al cambiar el estado, Room avisa y esta pantalla se redibuja
-                val pedido = todosLosPedidos.find { it.id == id } ?: return@composable
-                PantallaPedidoAdmin(
-                    pedido = pedido,
-                    onCambiarEstado = { nuevo ->
-                        pedidosViewModel.cambiarEstado(id, nuevo)
-                        aviso("Pedido #$id → ${nuevo.etiqueta}")
-                    },
-                    onVolver = volver,
-                    onMenu = abrirMenu
-                )
-            }
+                    // ---------- Cliente ----------
 
-            composable(Rutas.GESTION) {
-                PantallaGestionContenido(
-                    categorias = categoriasAdmin,
-                    productos = productosAdmin,
-                    onEditarCategoria = {
-                        adminViewModel.abrirFormCategoria(it)
-                        navController.navigate(Rutas.FORM_CATEGORIA)
-                    },
-                    onEliminarCategoria = adminViewModel::eliminarCategoria,
-                    onEditarProducto = {
-                        adminViewModel.abrirFormProducto(it)
-                        navController.navigate(Rutas.FORM_PRODUCTO)
-                    },
-                    onEliminarProducto = adminViewModel::eliminarProducto,
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
+                    composable(Rutas.CATALOGO) {
+                        PantallaCatalogo(
+                            estado = catalogo.copy(busqueda = busqueda), // la búsqueda viene en su propio StateFlow
+                            carga = cargaCatalogo,
+                            onBusquedaChange = catalogoViewModel::onBusquedaChange,
+                            onProductoClick = { navController.navigate(Rutas.detalle(it)) },
+                            onFavoritoClick = catalogoViewModel::alternarFavorito,
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu,
+                            columnas = columnas,
+                            onEscanear = { navController.navigate(Rutas.ESCANEAR_QR) }
+                        )
+                    }
 
-            composable(Rutas.FORM_CATEGORIA) {
-                val formulario by adminViewModel.formCategoria.collectAsState()
-                val operacion by adminViewModel.operacion.collectAsState()
-                // Guardado con éxito → vuelve a la gestión de contenido
-                LaunchedEffect(operacion) {
-                    if (operacion is EstadoOperacion.Exito) {
-                        adminViewModel.operacionMostrada()
-                        volver()
+                    // El id viaja dentro de la ruta ("detalle/3") y se lee aquí como número
+                    composable(Rutas.DETALLE, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                        val id = entrada.arguments?.getInt("id") ?: 0
+                        // Mientras Room no entrega la lista, todavía no hay producto que mostrar
+                        val producto = catalogo.producto(id) ?: return@composable
+                        PantallaDetalle(
+                            producto = producto,
+                            onFavoritoClick = { catalogoViewModel.alternarFavorito(id) },
+                            // El aviso ("Agregado" o "Solo quedan N") llega por carritoViewModel.mensaje
+                            onAgregarCarrito = { carritoViewModel.agregar(id) },
+                            onVolver = volver,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.CATEGORIAS) {
+                        PantallaCategorias(
+                            categorias = catalogo.categorias,
+                            onCategoriaClick = { navController.navigate(Rutas.categoria(it)) },
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.CATEGORIA, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                        val id = entrada.arguments?.getInt("id") ?: 0
+                        PantallaCategoria(
+                            nombre = catalogo.nombreCategoria(id),
+                            productos = catalogo.productosDeCategoria(id, ordenAscendente), // CU-15
+                            onProductoClick = { navController.navigate(Rutas.detalle(it)) },
+                            onFavoritoClick = catalogoViewModel::alternarFavorito,
+                            onVolver = volver,
+                            onMenu = abrirMenu,
+                            ordenAscendente = ordenAscendente,
+                            onCambiarOrden = catalogoViewModel::cambiarOrden,
+                            columnas = columnas
+                        )
+                    }
+
+                    composable(Rutas.FAVORITOS) {
+                        PantallaFavoritos(
+                            favoritos = catalogo.favoritos,
+                            onProductoClick = { navController.navigate(Rutas.detalle(it)) },
+                            onFavoritoClick = catalogoViewModel::alternarFavorito,
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu,
+                            columnas = columnas
+                        )
+                    }
+
+                    composable(Rutas.CARRITO) {
+                        PantallaCarrito(
+                            items = itemsCarrito,
+                            onCambiarCantidad = carritoViewModel::cambiarCantidad,
+                            // Si no hay tarjeta, el resultado SinTarjeta lleva a "Datos de pago" (LaunchedEffect(compra))
+                            onConfirmarCompra = carritoViewModel::confirmarCompra,
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.DATOS_PAGO) {
+                        PantallaDatosPago(
+                            pago = pagoCompra,
+                            onPagoChange = carritoViewModel::onPagoChange,
+                            onGuardarYConfirmar = carritoViewModel::guardarTarjetaYConfirmar,
+                            onVolver = volver,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.PERFIL) {
+                        val perfilViewModel: PerfilViewModel = viewModel(factory = fabrica)
+                        val perfil by perfilViewModel.uiState.collectAsState()
+                        val operacion by perfilViewModel.operacion.collectAsState()
+                        // CU-09/10/11: mensaje "Guardado con éxito" o el error al guardar
+                        LaunchedEffect(operacion) {
+                            when (val resultado = operacion) {
+                                EstadoOperacion.Exito -> aviso("Datos guardados con éxito")
+                                is EstadoOperacion.Error -> aviso(resultado.mensaje)
+                                else -> return@LaunchedEffect
+                            }
+                            perfilViewModel.operacionMostrada()
+                        }
+                        PantallaPerfil(
+                            estado = perfil,
+                            onEstadoChange = perfilViewModel::onEstadoChange,
+                            onEditar = perfilViewModel::editar,
+                            onGuardar = perfilViewModel::guardar,
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.SEGUIMIENTO) {
+                        PantallaSeguimiento(
+                            pedidos = misPedidos,
+                            onPedidoClick = { navController.navigate(Rutas.pedido(it)) },
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.PEDIDO, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                        val id = entrada.arguments?.getInt("id") ?: 0
+                        val pedido = misPedidos.find { it.id == id } ?: return@composable
+                        PantallaPedido(pedido = pedido, onVolver = volver, onMenu = abrirMenu)
+                    }
+
+                    // Lectura QR: un solo escáner para las etiquetas de las piezas ("producto:3")
+                    // y los paquetes ("pedido:1034"). Lo que abre depende del rol.
+                    composable(Rutas.ESCANEAR_QR) {
+                        // Creado dentro de composable(): cada vez que se abre la pantalla parte escaneando
+                        val qrViewModel: QrViewModel = viewModel()
+                        val estadoQr by qrViewModel.estado.collectAsState()
+
+                        // Código válido → se navega y el escáner sale del historial (atrás no vuelve a la cámara)
+                        LaunchedEffect(estadoQr) {
+                            val destino = when (val leido = estadoQr) {
+                                is EstadoQr.Producto -> if (esAdmin) {
+                                    // Admin en el taller: abre la edición de la pieza
+                                    adminViewModel.abrirFormProducto(leido.id)
+                                    Rutas.FORM_PRODUCTO
+                                } else {
+                                    Rutas.detalle(leido.id) // cliente en la feria: ficha de la pieza
+                                }
+                                is EstadoQr.Pedido ->
+                                    if (esAdmin) Rutas.pedidoAdmin(leido.id) else Rutas.pedido(leido.id)
+                                else -> null
+                            }
+                            if (destino != null) {
+                                aviso("Código leído")
+                                navController.navigate(destino) { popUpTo(Rutas.ESCANEAR_QR) { inclusive = true } }
+                            }
+                        }
+
+                        PantallaEscanearQr(
+                            estado = estadoQr,
+                            onCodigoLeido = { texto ->
+                                qrViewModel.onCodigoLeido(
+                                    texto = texto,
+                                    existeProducto = { id ->
+                                        if (esAdmin) productosAdmin.any { it.id == id } else catalogo.producto(id) != null
+                                    },
+                                    // El cliente solo puede abrir sus propios pedidos
+                                    existePedido = { id ->
+                                        if (esAdmin) todosLosPedidos.any { it.id == id } else misPedidos.any { it.id == id }
+                                    }
+                                )
+                            },
+                            onReintentar = qrViewModel::reiniciar,
+                            onVolver = volver,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    // ---------- Administrador ----------
+
+                    composable(Rutas.RESUMEN) {
+                        PantallaResumen(
+                            pedidosPendientes = pedidosPendientes,
+                            ventasHoy = ventasHoy,
+                            onPendientes = { navController.navigate(Rutas.NOTIFICACIONES) },
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.NOTIFICACIONES) {
+                        PantallaNotificaciones(
+                            pedidos = todosLosPedidos,
+                            onPedidoClick = { navController.navigate(Rutas.pedidoAdmin(it)) },
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.PEDIDO_ADMIN, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                        val id = entrada.arguments?.getInt("id") ?: 0
+                        // Se busca en la lista observada: al cambiar el estado, Room avisa y esta pantalla se redibuja
+                        val pedido = todosLosPedidos.find { it.id == id } ?: return@composable
+                        PantallaPedidoAdmin(
+                            pedido = pedido,
+                            onCambiarEstado = { nuevo ->
+                                pedidosViewModel.cambiarEstado(id, nuevo)
+                                aviso("Pedido #$id → ${nuevo.etiqueta}")
+                            },
+                            onVolver = volver,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.GESTION) {
+                        PantallaGestionContenido(
+                            categorias = categoriasAdmin,
+                            productos = productosAdmin,
+                            onEditarCategoria = {
+                                adminViewModel.abrirFormCategoria(it)
+                                navController.navigate(Rutas.FORM_CATEGORIA)
+                            },
+                            onEliminarCategoria = adminViewModel::eliminarCategoria,
+                            onEditarProducto = {
+                                adminViewModel.abrirFormProducto(it)
+                                navController.navigate(Rutas.FORM_PRODUCTO)
+                            },
+                            onEliminarProducto = adminViewModel::eliminarProducto,
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.FORM_CATEGORIA) {
+                        val formulario by adminViewModel.formCategoria.collectAsState()
+                        val operacion by adminViewModel.operacion.collectAsState()
+                        // Guardado con éxito → vuelve a la gestión de contenido
+                        LaunchedEffect(operacion) {
+                            if (operacion is EstadoOperacion.Exito) {
+                                adminViewModel.operacionMostrada()
+                                volver()
+                            }
+                        }
+                        PantallaFormCategoria(
+                            estado = formulario,
+                            onNombreChange = adminViewModel::onNombreCategoriaChange,
+                            onGuardar = adminViewModel::guardarCategoria,
+                            onVolver = volver
+                        )
+                    }
+
+                    composable(Rutas.FORM_PRODUCTO) {
+                        val formulario by adminViewModel.formProducto.collectAsState()
+                        val operacion by adminViewModel.operacion.collectAsState()
+                        LaunchedEffect(operacion) {
+                            if (operacion is EstadoOperacion.Exito) {
+                                adminViewModel.operacionMostrada()
+                                volver()
+                            }
+                        }
+                        PantallaFormProducto(
+                            estado = formulario,
+                            categorias = categoriasAdmin,
+                            onEstadoChange = adminViewModel::onFormProductoChange,
+                            onGuardar = adminViewModel::guardarProducto,
+                            onVolver = volver
+                        )
+                    }
+
+                    composable(Rutas.USUARIOS) {
+                        PantallaUsuarios(
+                            usuarios = usuarios,
+                            onEditar = { navController.navigate(Rutas.editarUsuario(it)) },
+                            onInicio = irAInicio,
+                            onMenu = abrirMenu
+                        )
+                    }
+
+                    composable(Rutas.EDITAR_USUARIO, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
+                        val id = entrada.arguments?.getInt("id") ?: 0
+                        val usuario = usuarios.find { it.id == id } ?: return@composable
+                        PantallaEditarUsuario(
+                            usuario = usuario,
+                            onAlternarBloqueo = { adminViewModel.alternarBloqueo(id) },
+                            onHacerAdmin = { adminViewModel.hacerAdmin(id) },
+                            onVolver = volver,
+                            onMenu = abrirMenu
+                        )
                     }
                 }
-                PantallaFormCategoria(
-                    estado = formulario,
-                    onNombreChange = adminViewModel::onNombreCategoriaChange,
-                    onGuardar = adminViewModel::guardarCategoria,
-                    onVolver = volver
-                )
-            }
-
-            composable(Rutas.FORM_PRODUCTO) {
-                val formulario by adminViewModel.formProducto.collectAsState()
-                val operacion by adminViewModel.operacion.collectAsState()
-                LaunchedEffect(operacion) {
-                    if (operacion is EstadoOperacion.Exito) {
-                        adminViewModel.operacionMostrada()
-                        volver()
-                    }
-                }
-                PantallaFormProducto(
-                    estado = formulario,
-                    categorias = categoriasAdmin,
-                    onEstadoChange = adminViewModel::onFormProductoChange,
-                    onGuardar = adminViewModel::guardarProducto,
-                    onVolver = volver
-                )
-            }
-
-            composable(Rutas.USUARIOS) {
-                PantallaUsuarios(
-                    usuarios = usuarios,
-                    onEditar = { navController.navigate(Rutas.editarUsuario(it)) },
-                    onInicio = irAInicio,
-                    onMenu = abrirMenu
-                )
-            }
-
-            composable(Rutas.EDITAR_USUARIO, arguments = listOf(navArgument("id") { type = NavType.IntType })) { entrada ->
-                val id = entrada.arguments?.getInt("id") ?: 0
-                val usuario = usuarios.find { it.id == id } ?: return@composable
-                PantallaEditarUsuario(
-                    usuario = usuario,
-                    onAlternarBloqueo = { adminViewModel.alternarBloqueo(id) },
-                    onHacerAdmin = { adminViewModel.hacerAdmin(id) },
-                    onVolver = volver,
-                    onMenu = abrirMenu
-                )
             }
         }
     }
