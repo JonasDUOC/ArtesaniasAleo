@@ -51,8 +51,14 @@ fun ImagenArtesania(
     }
 }
 
-// Las fotos guardadas en la BD son rutas de archivo: se convierten a Uri para mostrarlas
-fun rutaAUri(ruta: String?): Uri? = ruta?.let { Uri.fromFile(File(it)) }
+// Las fotos guardadas en la BD se convierten a Uri para mostrarlas. Hay dos tipos:
+// - "android.resource://..." → foto de los datos semilla, viene dentro del APK (res/drawable-nodpi)
+// - "/data/.../files/productos/x.jpg" → foto que el admin agregó (archivo copiado por ProductoRepository)
+fun rutaAUri(ruta: String?): Uri? = when {
+    ruta == null -> null
+    ruta.startsWith("android.resource://") -> Uri.parse(ruta)
+    else -> Uri.fromFile(File(ruta))
+}
 
 // Lee la imagen reducida (las fotos de cámara pueden pesar varios MB y llenar la memoria)
 private fun cargarImagen(contexto: Context, uri: Uri, ladoMaximo: Int = 800): ImageBitmap? = try {
