@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,8 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.artesaniasaleo.R
 import com.example.artesaniasaleo.model.CatalogoUiState
 import com.example.artesaniasaleo.model.EstadoOperacion
 import com.example.artesaniasaleo.model.PRODUCTOS_DEMO
@@ -44,6 +49,7 @@ fun PantallaCatalogo(
     onInicio: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
+    onEscanear: () -> Unit = {},     // abre la cámara para leer un QR
     columnas: Int = 2 // 2, 3 o 4 según WindowSizeUtils (Guía 9)
 ) {
     Scaffold(
@@ -64,7 +70,15 @@ fun PantallaCatalogo(
                 .padding(espacioBarra)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Buscador(valor = estado.busqueda, onValorChange = onBusquedaChange)
+            // Buscador y, a su derecha, el botón para escanear un QR (como en el mockup)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.weight(1f)) {
+                    Buscador(valor = estado.busqueda, onValorChange = onBusquedaChange)
+                }
+                FilledTonalIconButton(onClick = onEscanear, modifier = Modifier.padding(start = 8.dp).size(56.dp)) {
+                    Icon(painterResource(R.drawable.ic_qr), contentDescription = "Escanear QR")
+                }
+            }
 
             when {
                 carga is EstadoOperacion.Cargando -> Centrado { CircularProgressIndicator() }

@@ -12,6 +12,8 @@ room = "2.8.5" # se agrego
 ksp = "2.3.11" # se agrego
 datastore = "1.2.1" # se agrego
 navigationCompose = "2.9.0" # se agrego
+camerax = "1.4.2" # se agrego: lectura QR
+mlkitBarcode = "17.3.0" # se agrego: lectura QR
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,6 +37,10 @@ androidx-compose-material-icons-core = { group = "androidx.compose.material", na
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" } # se agrego
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" } # se agrego
 androidx-compose-material3-window-size = { group = "androidx.compose.material3", name = "material3-window-size-class" } # se agrego
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" } # se agrego
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" } # se agrego
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" } # se agrego
+mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcode" } # se agrego
 
 
 [plugins]
