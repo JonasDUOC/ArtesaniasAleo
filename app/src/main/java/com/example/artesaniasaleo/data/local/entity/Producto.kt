@@ -22,5 +22,6 @@ data class Producto (
     val titulo: String,
     val descripcion: String,
     val precio: Int,
-    val estado: String = "activo"
+    val estado: String = "activo",
+    val stock: Int = 0 // unidades disponibles en el taller (control de stock, CU-41)
 )

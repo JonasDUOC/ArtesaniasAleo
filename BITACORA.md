@@ -17,8 +17,8 @@ com.example.artesaniasaleo
 │       │                    DetalleConProducto, PedidoConDetalles, UsuarioConPerfil
 │       ├── dao/          ✅ UsuarioDao, CategoriaDao, ProductoDao, CarritoDao,
 │       │                    FavoritoDao, PedidoDao
-│       ├── database/     ✅ AppDatabase.kt (versión 2; registra entidades y DAOs;
-│       │                    datos semilla: admin, cliente Ana, 4 categorías, 8 productos)
+│       ├── database/     ✅ AppDatabase.kt (versión 3; registra entidades y DAOs;
+│       │                    datos semilla: admin, cliente Ana, 4 categorías, 8 productos con stock)
 │       └── datastore/    ✅ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ✅ UsuarioRepository, CategoriaRepository, ProductoRepository,
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
@@ -35,7 +35,7 @@ com.example.artesaniasaleo
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral,
 │   │                        PantallaCarga, ImagenArtesania, SelectorImagenes (galería y cámara)
-│   └── utils/            ✅ Validaciones.kt (correo, RUT, tarjeta), WindowSizeUtils.kt
+│   └── utils/            ✅ Validaciones.kt (correo, RUT, tarjeta, stock), WindowSizeUtils.kt
 ├── navigation/           ✅ Rutas, AppNavegacion (NavHost + menú lateral). EstadoDemo eliminado
 └── MainActivity.kt
 ```
@@ -115,6 +115,9 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 | Vencimiento de tarjeta como texto `MM/AA` | Así viene en la tarjeta (sin día); Room no guarda fechas sin convertidor. Se valida formato y que no esté vencida con `YearMonth` |
 | `obtenerWindowSizeClass()` en `ui/utils` (Guía 9) | Un solo lugar calcula el tamaño; las pantallas reciben `columnas` y sus `@Preview` siguen funcionando |
 | Validaciones en `ui/utils/Validaciones.kt` | Funciones puras reutilizables (ViewModel y demo) y testeables en la Unidad 3 |
+| `Producto.stock` (no está en el MER original) | Requisito de control de stock: se agrega `* stock` a PRODUCTO en el MER y el CU-41 "Gestionar stock" |
+| Menú lateral se abre desde la derecha | El ícono de menú está arriba a la derecha (mockup); `ModalNavigationDrawer` solo abre desde el inicio, así que se envuelve en `LayoutDirection.Rtl` y se vuelve a `Ltr` para su contenido |
+| Stock validado dos veces: carrito y compra | El carrito avisa antes; la compra (`@Transaction`) vuelve a revisar porque el admin pudo bajarlo entremedio: todo o nada |
 
 ---
 
@@ -133,6 +136,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-29 — Control de stock
+**Autor:** Jonas · **Rama:** `feature/control-stock`
+
+- **Qué:** `Producto.stock` (BD versión 3, seeds con stock; la Cuchara tallada parte agotada). El admin edita el stock en el formulario de producto y lo ve en la lista de gestión. El cliente ve "Agotado" / "Quedan N" solo en el detalle (el catálogo no lo muestra); con stock 0 no puede agregar. `CarritoRepository` no deja superar el stock y `PedidoDao.confirmarCompra` lo verifica y lo descuenta dentro de la transacción.
+- **Por qué:** requisito del proyecto (Prueba 2): no vender piezas que no existen en el taller. Con el QR, el admin escanea una pieza y corrige su stock.
+- **Conecta con:** `CarritoViewModel` ahora expone `mensaje` (Toast "Agregado al carrito" o "Solo quedan N"); `AdminViewModel` valida con `esStockValido()`.
+- **Pendiente:** actualizar el MER (PRODUCTO `* stock`) y agregar el CU-41 "Gestionar stock" a los casos de uso. Desinstalar la app antes de probar (cambió la BD).
 
 ### 2026-10-28 — Lectura de códigos QR
 **Autor:** Max · **Rama:** `feature/lectura-qr`

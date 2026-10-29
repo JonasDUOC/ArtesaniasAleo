@@ -61,6 +61,9 @@ class ProductoRepository(
         if (producto.precio <= 0) {
             throw IllegalArgumentException("El precio debe ser mayor a 0")
         }
+        if (producto.stock < 0) {
+            throw IllegalArgumentException("El stock no puede ser negativo")
+        }
         if (imagenes.isEmpty()) {
             throw IllegalArgumentException("Agrega al menos una imagen")
         }

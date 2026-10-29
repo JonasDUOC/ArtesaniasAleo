@@ -23,11 +23,13 @@ data class ProductoFormUiState(
     val nombre: String = "",
     val descripcion: String = "",
     val precio: String = "",
+    val stock: String = "",        // texto, como el precio; se valida al guardar
     val categoriaId: Int? = null,
     // Imágenes elegidas de la galería o tomadas con la cámara (Guía 13: el estado guarda Uri)
     val imagenes: List<Uri> = emptyList(),
     val errorNombre: String? = null,
     val errorPrecio: String? = null,
+    val errorStock: String? = null,
     val errorCategoria: String? = null,
     val errorImagenes: String? = null
 )

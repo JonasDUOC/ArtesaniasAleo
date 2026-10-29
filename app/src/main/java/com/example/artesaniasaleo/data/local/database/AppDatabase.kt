@@ -37,7 +37,7 @@ import com.example.artesaniasaleo.data.local.entity.Usuario
         Pedido::class,
         PedidoDetalle::class
     ],
-    version = 2, // 2: PerfilUsuario.telefono
+    version = 3, // 2: PerfilUsuario.telefono · 3: Producto.stock
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -142,6 +142,7 @@ abstract class AppDatabase : RoomDatabase() {
         // Datos de prueba (sintéticos) para que el catálogo no parta vacío.
         // Los ids se escriben a mano para que cada producto apunte a su categoría.
         // Sin imágenes por ahora: la tarjeta muestra el degradado provisional.
+        // Stock variado para probar: la Cuchara tallada (id 5) parte agotada y la Manta (id 4) con 1.
         private fun insertarCatalogo(db: SupportSQLiteDatabase) {
             db.execSQL(
                 """
@@ -154,15 +155,15 @@ abstract class AppDatabase : RoomDatabase() {
             )
             db.execSQL(
                 """
-                INSERT OR IGNORE INTO producto (id, categoriaId, titulo, descripcion, precio, estado) VALUES
-                (1, 1, 'Jarrón de greda', 'Pieza única elaborada con técnica de greda cocida y pintura mineral. 24 cm de alto x 14 cm de diámetro.', 18500, 'activo'),
-                (2, 1, 'Taza esmaltada', 'Taza de cerámica modelada a mano con esmalte azul. Capacidad 300 ml.', 7900, 'activo'),
-                (3, 2, 'Chal de lana', 'Tejido a telar con lana de oveja teñida naturalmente. 180 x 60 cm.', 12000, 'activo'),
-                (4, 2, 'Manta de telar', 'Manta tejida en telar mapuche con diseños tradicionales. 200 x 140 cm.', 34900, 'activo'),
-                (5, 3, 'Cuchara tallada', 'Cuchara de servir tallada a mano en madera de raulí.', 6500, 'activo'),
-                (6, 3, 'Tabla para picar', 'Tabla de raulí curada con aceite de linaza. 40 x 25 cm.', 14500, 'activo'),
-                (7, 4, 'Anillo de plata', 'Anillo artesanal en plata 950 con piedra natural.', 15900, 'activo'),
-                (8, 4, 'Aros de cobre', 'Aros martillados a mano en cobre con baño de plata.', 9900, 'activo')
+                INSERT OR IGNORE INTO producto (id, categoriaId, titulo, descripcion, precio, estado, stock) VALUES
+                (1, 1, 'Jarrón de greda', 'Pieza única elaborada con técnica de greda cocida y pintura mineral. 24 cm de alto x 14 cm de diámetro.', 18500, 'activo', 5),
+                (2, 1, 'Taza esmaltada', 'Taza de cerámica modelada a mano con esmalte azul. Capacidad 300 ml.', 7900, 'activo', 3),
+                (3, 2, 'Chal de lana', 'Tejido a telar con lana de oveja teñida naturalmente. 180 x 60 cm.', 12000, 'activo', 4),
+                (4, 2, 'Manta de telar', 'Manta tejida en telar mapuche con diseños tradicionales. 200 x 140 cm.', 34900, 'activo', 1),
+                (5, 3, 'Cuchara tallada', 'Cuchara de servir tallada a mano en madera de raulí.', 6500, 'activo', 0),
+                (6, 3, 'Tabla para picar', 'Tabla de raulí curada con aceite de linaza. 40 x 25 cm.', 14500, 'activo', 2),
+                (7, 4, 'Anillo de plata', 'Anillo artesanal en plata 950 con piedra natural.', 15900, 'activo', 2),
+                (8, 4, 'Aros de cobre', 'Aros martillados a mano en cobre con baño de plata.', 9900, 'activo', 6)
                 """
             )
         }

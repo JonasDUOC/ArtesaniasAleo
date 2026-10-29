@@ -15,6 +15,7 @@ import com.example.artesaniasaleo.model.UsuarioUi
 import com.example.artesaniasaleo.repository.CategoriaRepository
 import com.example.artesaniasaleo.repository.ProductoRepository
 import com.example.artesaniasaleo.repository.UsuarioRepository
+import com.example.artesaniasaleo.ui.utils.esStockValido
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -137,6 +138,7 @@ class AdminViewModel(
                 nombre = p.titulo,
                 descripcion = p.descripcion,
                 precio = p.precio.toString(),
+                stock = p.stock.toString(),
                 categoriaId = p.categoriaId,
                 // Las fotos ya guardadas son archivos de la app: se convierten a Uri para el formulario
                 imagenes = existente.imagenes.sortedBy { it.orden }.map { Uri.fromFile(File(it.url)) }
@@ -155,12 +157,16 @@ class AdminViewModel(
         val revisado = f.copy(
             errorNombre = if (f.nombre.isNotBlank()) null else "Obligatorio",
             errorPrecio = if (precio > 0) null else "Ingresa un precio válido",
+            errorStock = if (esStockValido(f.stock)) null else "Ingresa el stock (0 o más)",
             errorCategoria = if (f.categoriaId != null) null else "Selecciona una categoría",
             errorImagenes = if (f.imagenes.isNotEmpty()) null else "Agrega al menos una imagen" // CU-32
         )
         _formProducto.value = revisado
         val categoriaId = revisado.categoriaId
-        val hayErrores = listOf(revisado.errorNombre, revisado.errorPrecio, revisado.errorCategoria, revisado.errorImagenes)
+        val hayErrores = listOf(
+            revisado.errorNombre, revisado.errorPrecio, revisado.errorStock,
+            revisado.errorCategoria, revisado.errorImagenes
+        )
             .any { it != null }
         if (hayErrores || categoriaId == null) return
 
@@ -174,7 +180,8 @@ class AdminViewModel(
                     titulo = revisado.nombre.trim(),
                     descripcion = revisado.descripcion.trim(),
                     precio = precio,
-                    estado = anterior?.estado ?: "activo"
+                    estado = anterior?.estado ?: "activo",
+                    stock = revisado.stock.trim().toInt() // ya validado con esStockValido
                 )
                 // El repository copia las imágenes a filesDir/productos/ y guarda sus rutas
                 if (anterior == null) productoRepository.crear(producto, revisado.imagenes)
