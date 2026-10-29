@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -79,6 +81,10 @@ fun PantallaCatalogo(
                     Icon(painterResource(R.drawable.ic_qr), contentDescription = "Escanear QR")
                 }
             }
+            // Separación FIJA bajo el buscador (igual a la de arriba: 12 dp). Va fuera de la grilla:
+            // si fuera contentPadding de la grilla, se iría con el scroll y las tarjetas
+            // quedarían pegadas al buscador
+            Spacer(Modifier.height(12.dp))
 
             when {
                 carga is EstadoOperacion.Cargando -> Centrado { CircularProgressIndicator() }
@@ -89,12 +95,11 @@ fun PantallaCatalogo(
                     text = "Sin resultados",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 12.dp)
                 )
                 // Lazy: solo dibuja las tarjetas visibles, aunque haya muchos productos
                 else -> LazyVerticalGrid(
                     columns = GridCells.Fixed(columnas),
-                    contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {

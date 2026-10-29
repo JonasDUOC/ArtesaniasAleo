@@ -103,7 +103,8 @@ fun PantallaGestionContenido(
                         Text("Sin resultados", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 12.dp))
                     }
                     filtrados.forEach { producto ->
-                        FilaLista(texto = producto.nombre) {
+                        val textoStock = if (producto.agotado) "Agotado" else "Stock: ${producto.stock}"
+                        FilaLista(texto = "${producto.nombre}\n$textoStock") {
                             AccionesFila({ onEditarProducto(producto.id) }, { onEliminarProducto(producto.id) })
                         }
                     }
@@ -210,6 +211,16 @@ fun PantallaFormProducto(
                 tipoTeclado = KeyboardType.Number
             )
             Spacer(Modifier.height(8.dp))
+            // Control de stock: unidades disponibles (0 = agotado; el cliente no puede comprarlo)
+            CampoTexto(
+                etiqueta = "Stock (unidades)",
+                valor = estado.stock,
+                onValorChange = { onEstadoChange(estado.copy(stock = it.filter(Char::isDigit), errorStock = null)) },
+                placeholder = "0",
+                mensajeError = estado.errorStock,
+                tipoTeclado = KeyboardType.Number
+            )
+            Spacer(Modifier.height(8.dp))
             // El selector muestra nombres; al elegir se guarda el id de la categoría
             CampoSelector(
                 etiqueta = "Categoría",
@@ -253,7 +264,7 @@ private fun VistaGestion() {
 private fun VistaFormProducto() {
     ArtesaniasAleoTheme {
         PantallaFormProducto(
-            estado = ProductoFormUiState(nombre = "Jarrón de greda", precio = "18500", categoriaId = 1),
+            estado = ProductoFormUiState(nombre = "Jarrón de greda", precio = "18500", stock = "5", categoriaId = 1),
             categorias = CATEGORIAS_DEMO, onEstadoChange = {}, onGuardar = {}, onVolver = {}
         )
     }

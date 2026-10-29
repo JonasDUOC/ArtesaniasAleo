@@ -100,7 +100,19 @@ fun PantallaDetalle(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                // Control de stock: el cliente ve cuántas quedan antes de agregar al carrito
+                Text(
+                    text = when {
+                        producto.agotado -> "Agotado"
+                        producto.stock == 1 -> "Queda 1 unidad"
+                        else -> "Quedan ${producto.stock} unidades"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (producto.agotado) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
                     producto.descripcion,
@@ -114,10 +126,12 @@ fun PantallaDetalle(
                         onClick = onFavoritoClick,
                         modifier = Modifier.weight(1f)
                     )
+                    // Con stock 0 el botón queda deshabilitado (no se puede agregar)
                     BotonPrincipal(
-                        texto = "Agregar al carrito",
+                        texto = if (producto.agotado) "Agotado" else "Agregar al carrito",
                         onClick = onAgregarCarrito,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        habilitado = !producto.agotado
                     )
                 }
             }

@@ -28,6 +28,9 @@ fun esRutValido(rut: String): Boolean {
     return esperado == dv.uppercase()
 }
 
+// Control de stock: número entero desde 0 (0 = agotado)
+fun esStockValido(stock: String): Boolean = stock.trim().toIntOrNull()?.let { it >= 0 } == true
+
 // CU-11: devuelve la tarjeta con los errores de cada campo (null = campo correcto)
 fun validarTarjeta(pago: DatosPagoUiState): DatosPagoUiState = pago.copy(
     errorNumero = if (pago.numero.length == 16 && pago.numero.all { it.isDigit() }) null else "Debe tener 16 dígitos",

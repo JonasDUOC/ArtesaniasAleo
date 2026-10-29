@@ -57,9 +57,19 @@ class CarritoViewModel(
     private val _compra = MutableStateFlow<EstadoCompra>(EstadoCompra.Inactivo)
     val compra: StateFlow<EstadoCompra> = _compra.asStateFlow()
 
+    // Mensaje corto para un Toast ("Agregado al carrito", "Solo quedan 2 unidades"); null = nada
+    private val _mensaje = MutableStateFlow<String?>(null)
+    val mensaje: StateFlow<String?> = _mensaje.asStateFlow()
+
+    fun mensajeMostrado() {
+        _mensaje.value = null
+    }
+
     // CU-20
     fun agregar(productoId: Int) {
-        ejecutar("agregar al carrito") { usuarioId -> carritoRepository.agregar(usuarioId, productoId) }
+        ejecutar("agregar al carrito", exito = "Agregado al carrito") { usuarioId ->
+            carritoRepository.agregar(usuarioId, productoId)
+        }
     }
 
     // CU-21 y CU-22: +1 / -1; si llega a 0, el repository lo elimina
@@ -123,13 +133,16 @@ class CarritoViewModel(
     private suspend fun usuarioIdActual(): Int =
         usuarioRepository.usuarioIdSesion.first() ?: throw IllegalStateException("No hay sesión iniciada")
 
-    // Ejecuta una escritura en Room con el id del usuario; si falla, queda en el Logcat
-    private fun ejecutar(accion: String, bloque: suspend (Int) -> Unit) {
+    // Ejecuta una escritura en Room con el id del usuario.
+    // Si falla (ej.: sin stock), el mensaje del repository se muestra al usuario y queda en el Logcat.
+    private fun ejecutar(accion: String, exito: String? = null, bloque: suspend (Int) -> Unit) {
         viewModelScope.launch {
             try {
                 bloque(usuarioIdActual())
+                if (exito != null) _mensaje.value = exito
             } catch (e: Exception) {
                 Log.e(TAG, "No se pudo $accion", e)
+                _mensaje.value = e.message ?: "No se pudo $accion"
             }
         }
     }

@@ -9,5 +9,8 @@ data class ProductoUi(
     val imagenes: List<String> = emptyList(), // todas las rutas, en orden (carrusel del detalle)
     val esFavorito: Boolean = false,
     val descripcion: String = "",   // se muestra en el detalle
-    val categoriaId: Int = 0        // para filtrar por categoría
-)
+    val categoriaId: Int = 0,       // para filtrar por categoría
+    val stock: Int = 0              // unidades disponibles; 0 = agotado
+) {
+    val agotado: Boolean get() = stock <= 0
+}

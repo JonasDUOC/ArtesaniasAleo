@@ -11,19 +11,19 @@ val CATEGORIAS_DEMO = listOf(
 
 val PRODUCTOS_DEMO = listOf(
     ProductoUi(
-        id = 1, nombre = "Jarrón de greda", precio = 18500, categoriaId = 1,
+        id = 1, nombre = "Jarrón de greda", precio = 18500, categoriaId = 1, stock = 5,
         descripcion = "Pieza única elaborada con técnica de greda cocida y pintura mineral. 24cm alto x 14cm diámetro."
     ),
     ProductoUi(
-        id = 2, nombre = "Chal de lana", precio = 12000, categoriaId = 2, esFavorito = true,
+        id = 2, nombre = "Chal de lana", precio = 12000, categoriaId = 2, esFavorito = true, stock = 4,
         descripcion = "Tejido a telar con lana de oveja teñida naturalmente. 180x60cm."
     ),
     ProductoUi(
-        id = 3, nombre = "Cuchara tallada", precio = 6500, categoriaId = 3,
+        id = 3, nombre = "Cuchara tallada", precio = 6500, categoriaId = 3, stock = 0,
         descripcion = "Cuchara de servir tallada a mano en madera de raulí."
     ),
     ProductoUi(
-        id = 4, nombre = "Anillo de plata", precio = 15900, categoriaId = 4,
+        id = 4, nombre = "Anillo de plata", precio = 15900, categoriaId = 4, stock = 2,
         descripcion = "Anillo artesanal en plata 950 con piedra natural."
     )
 )

@@ -111,18 +111,28 @@ private fun FilaCarrito(producto: ProductoUi, cantidad: Int, onCambiarCantidad: 
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            // Si el admin bajó el stock después de agregarlo, se avisa antes de comprar
+            if (cantidad > producto.stock) {
+                Text(
+                    text = if (producto.agotado) "Agotado" else "Solo quedan ${producto.stock}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
         BotonCantidad("-") { onCambiarCantidad(producto.id, -1) }
         Text("$cantidad", style = MaterialTheme.typography.bodyMedium)
-        BotonCantidad("+") { onCambiarCantidad(producto.id, 1) }
+        // Control de stock: no se puede pedir más de lo que hay
+        BotonCantidad("+", habilitado = cantidad < producto.stock) { onCambiarCantidad(producto.id, 1) }
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 }
 
 @Composable
-private fun BotonCantidad(texto: String, onClick: () -> Unit) {
+private fun BotonCantidad(texto: String, habilitado: Boolean = true, onClick: () -> Unit) {
     FilledIconButton(
         onClick = onClick,
+        enabled = habilitado,
         modifier = Modifier.size(28.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,

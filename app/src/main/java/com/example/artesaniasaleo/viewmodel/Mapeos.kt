@@ -23,7 +23,8 @@ fun ProductoConImagenes.aProductoUi(favoritos: Set<Int> = emptySet()): ProductoU
         imagenes = rutas,
         esFavorito = producto.id in favoritos,
         descripcion = producto.descripcion,
-        categoriaId = producto.categoriaId
+        categoriaId = producto.categoriaId,
+        stock = producto.stock
     )
 }
 
