@@ -22,15 +22,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.artesaniasaleo.R
 import com.example.artesaniasaleo.model.EstadoCompra
 import com.example.artesaniasaleo.model.EstadoOperacion
+import com.example.artesaniasaleo.model.EstadoQr
 import com.example.artesaniasaleo.model.EstadoSesion
 import com.example.artesaniasaleo.ui.components.MenuLateral
 import com.example.artesaniasaleo.ui.components.OpcionMenu
@@ -51,6 +55,7 @@ import com.example.artesaniasaleo.ui.screens.detalle.PantallaDetalle
 import com.example.artesaniasaleo.ui.screens.favoritos.PantallaFavoritos
 import com.example.artesaniasaleo.ui.screens.login.PantallaLogin
 import com.example.artesaniasaleo.ui.screens.pago.PantallaDatosPago
+import com.example.artesaniasaleo.ui.screens.qr.PantallaEscanearQr
 import com.example.artesaniasaleo.ui.screens.perfil.PantallaPerfil
 import com.example.artesaniasaleo.ui.screens.recuperar.PantallaRecuperar
 import com.example.artesaniasaleo.ui.screens.registro.PantallaRegistro
@@ -66,6 +71,7 @@ import com.example.artesaniasaleo.viewmodel.CatalogoViewModel
 import com.example.artesaniasaleo.viewmodel.LoginViewModel
 import com.example.artesaniasaleo.viewmodel.PedidosViewModel
 import com.example.artesaniasaleo.viewmodel.PerfilViewModel
+import com.example.artesaniasaleo.viewmodel.QrViewModel
 import com.example.artesaniasaleo.viewmodel.RecuperarViewModel
 import com.example.artesaniasaleo.viewmodel.RegistroViewModel
 import com.example.artesaniasaleo.viewmodel.SesionViewModel
@@ -207,7 +213,8 @@ private fun NavegacionPrincipal(
         OpcionMenu("Carrito", Icons.Filled.ShoppingCart, { irDesdeMenu(Rutas.CARRITO) }, cantidadCarrito),
         OpcionMenu("Favoritos", Icons.Filled.FavoriteBorder, { irDesdeMenu(Rutas.FAVORITOS) }),
         OpcionMenu("Categorías", Icons.AutoMirrored.Filled.List, { irDesdeMenu(Rutas.CATEGORIAS) }),
-        OpcionMenu("Seguimiento", Icons.Filled.LocationOn, { irDesdeMenu(Rutas.SEGUIMIENTO) })
+        OpcionMenu("Seguimiento", Icons.Filled.LocationOn, { irDesdeMenu(Rutas.SEGUIMIENTO) }),
+        OpcionMenu("Escanear QR", ImageVector.vectorResource(R.drawable.ic_qr), { irDesdeMenu(Rutas.ESCANEAR_QR) })
     )
     val opcionesAdmin = listOf(
         OpcionMenu("Resumen", Icons.Filled.DateRange, { irDesdeMenu(Rutas.RESUMEN) }),
@@ -309,7 +316,8 @@ private fun NavegacionPrincipal(
                     onFavoritoClick = catalogoViewModel::alternarFavorito,
                     onInicio = irAInicio,
                     onMenu = abrirMenu,
-                    columnas = columnas
+                    columnas = columnas,
+                    onEscanear = { navController.navigate(Rutas.ESCANEAR_QR) }
                 )
             }
 
@@ -422,6 +430,53 @@ private fun NavegacionPrincipal(
                 val id = entrada.arguments?.getInt("id") ?: 0
                 val pedido = misPedidos.find { it.id == id } ?: return@composable
                 PantallaPedido(pedido = pedido, onVolver = volver, onMenu = abrirMenu)
+            }
+
+            // Lectura QR: un solo escáner para las etiquetas de las piezas ("producto:3")
+            // y los paquetes ("pedido:1034"). Lo que abre depende del rol.
+            composable(Rutas.ESCANEAR_QR) {
+                // Creado dentro de composable(): cada vez que se abre la pantalla parte escaneando
+                val qrViewModel: QrViewModel = viewModel()
+                val estadoQr by qrViewModel.estado.collectAsState()
+
+                // Código válido → se navega y el escáner sale del historial (atrás no vuelve a la cámara)
+                LaunchedEffect(estadoQr) {
+                    val destino = when (val leido = estadoQr) {
+                        is EstadoQr.Producto -> if (esAdmin) {
+                            // Admin en el taller: abre la edición de la pieza
+                            adminViewModel.abrirFormProducto(leido.id)
+                            Rutas.FORM_PRODUCTO
+                        } else {
+                            Rutas.detalle(leido.id) // cliente en la feria: ficha de la pieza
+                        }
+                        is EstadoQr.Pedido ->
+                            if (esAdmin) Rutas.pedidoAdmin(leido.id) else Rutas.pedido(leido.id)
+                        else -> null
+                    }
+                    if (destino != null) {
+                        aviso("Código leído")
+                        navController.navigate(destino) { popUpTo(Rutas.ESCANEAR_QR) { inclusive = true } }
+                    }
+                }
+
+                PantallaEscanearQr(
+                    estado = estadoQr,
+                    onCodigoLeido = { texto ->
+                        qrViewModel.onCodigoLeido(
+                            texto = texto,
+                            existeProducto = { id ->
+                                if (esAdmin) productosAdmin.any { it.id == id } else catalogo.producto(id) != null
+                            },
+                            // El cliente solo puede abrir sus propios pedidos
+                            existePedido = { id ->
+                                if (esAdmin) todosLosPedidos.any { it.id == id } else misPedidos.any { it.id == id }
+                            }
+                        )
+                    },
+                    onReintentar = qrViewModel::reiniciar,
+                    onVolver = volver,
+                    onMenu = abrirMenu
+                )
             }
 
             // ---------- Administrador ----------

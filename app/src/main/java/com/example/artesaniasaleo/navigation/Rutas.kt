@@ -16,6 +16,7 @@ object Rutas {
     const val PERFIL = "perfil"
     const val SEGUIMIENTO = "seguimiento"
     const val PEDIDO = "pedido/{id}"
+    const val ESCANEAR_QR = "escanear_qr"
 
     // Administrador
     const val RESUMEN = "resumen"

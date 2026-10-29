@@ -60,4 +60,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose) //Se agrego
     implementation(libs.androidx.lifecycle.viewmodel.compose) //Se agrego
     implementation(libs.androidx.compose.material3.window.size) //Se agrego
-}
+    // Lectura QR: CameraX muestra y entrega las imágenes de la cámara, ML Kit encuentra el código
+    implementation(libs.androidx.camera.camera2) //Se agrego
+    implementation(libs.androidx.camera.lifecycle) //Se agrego
+    implementation(libs.androidx.camera.view) //Se agrego
+    implementation(libs.mlkit.barcode.scanning) //Se agrego
+}

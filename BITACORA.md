@@ -25,12 +25,13 @@ com.example.artesaniasaleo
 ├── model/                ✅ UiState de cada pantalla, ProductoUi, CategoriaUi, PedidoUi,
 │                            DatosPagoUiState, PerfilUiState, EstadoOperacion, EstadoSesion,
 │                            EstadoCompra (sealed class), ProductosDemo (solo para @Preview)
-├── viewmodel/            ✅ Factory, Sesion, Login, Registro, Catalogo, Carrito, Perfil, Pedidos, Admin, Recuperar + Mapeos.kt
+├── viewmodel/            ✅ Factory, Sesion, Login, Registro, Catalogo, Carrito, Perfil, Pedidos, Admin, Recuperar, Qr + Mapeos.kt
 ├── ui/
 │   ├── theme/            ✅ Color, Type, Shape, Theme (paleta y fuentes del mockup)
 │   ├── screens/          ✅ login/ PantallaLogin, registro/ PantallaRegistro (3 etapas),
 │   │                        catalogo/, detalle/, categorias/, favoritos/, carrito/, pago/,
-│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/
+│   │                        perfil/, seguimiento/, terminos/, recuperar/, admin/,
+│   │                        qr/ PantallaEscanearQr (CameraX + ML Kit)
 │   ├── components/       ✅ Botones, CampoTexto, CampoSelector, BarraSuperior, TarjetaProducto,
 │   │                        GrillaProductos, FilaLista, FormularioPago, MenuLateral,
 │   │                        PantallaCarga, ImagenArtesania, SelectorImagenes (galería y cámara)
@@ -132,6 +133,14 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-28 — Lectura de códigos QR
+**Autor:** Max · **Rama:** `feature/lectura-qr`
+
+- **Qué:** `PantallaEscanearQr` (CameraX muestra la cámara y ML Kit lee el QR) y `QrViewModel`, que interpreta el texto: `producto:N` abre la pieza y `pedido:N` abre el pedido. El cliente ve el detalle o el seguimiento de **su** pedido; el administrador abre la edición de la pieza o el detalle del pedido. Botón QR junto al buscador del catálogo y opción "Escanear QR" en el menú.
+- **Por qué:** la Prueba 2 exige lectura QR con la cámara. Une la pieza física con la app: etiqueta en la feria, inventario en el taller y QR pegado en el paquete.
+- **Conecta con:** `CatalogoViewModel`, `AdminViewModel` y `PedidosViewModel` (para comprobar que el id existe) y `Rutas.ESCANEAR_QR`. Dependencias nuevas: `camera-camera2`, `camera-lifecycle`, `camera-view` y `barcode-scanning`.
+- **Pendiente:** control de stock (requisito del proyecto); en el emulador se prueba con **Extended Controls > Camera > Virtual scene images** y QR generados en qrcode-monkey.com.
 
 ### 2026-10-28 — Bitácora al día y cierre de la Unidad 2
 **Autor:** Jonas · **Rama:** `docs/bitacora`
