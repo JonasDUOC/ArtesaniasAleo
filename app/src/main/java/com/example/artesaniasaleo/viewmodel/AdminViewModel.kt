@@ -15,6 +15,7 @@ import com.example.artesaniasaleo.model.UsuarioUi
 import com.example.artesaniasaleo.repository.CategoriaRepository
 import com.example.artesaniasaleo.repository.ProductoRepository
 import com.example.artesaniasaleo.repository.UsuarioRepository
+import com.example.artesaniasaleo.ui.components.rutaAUri
 import com.example.artesaniasaleo.ui.utils.esStockValido
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
 
 // Panel de administración: gestión de contenido (CU-28 a CU-34) y control de usuarios (CU-39).
 // Compartido por Gestión, los formularios de categoría y producto, Usuarios y Editar usuario.
@@ -140,8 +140,9 @@ class AdminViewModel(
                 precio = p.precio.toString(),
                 stock = p.stock.toString(),
                 categoriaId = p.categoriaId,
-                // Las fotos ya guardadas son archivos de la app: se convierten a Uri para el formulario
-                imagenes = existente.imagenes.sortedBy { it.orden }.map { Uri.fromFile(File(it.url)) }
+                // Las fotos ya guardadas (archivos de la app o fotos semilla del APK) se convierten a Uri.
+                // Al guardar, ProductoRepository las copia a filesDir/productos, igual que una foto nueva
+                imagenes = existente.imagenes.sortedBy { it.orden }.mapNotNull { rutaAUri(it.url) }
             )
         }
     }

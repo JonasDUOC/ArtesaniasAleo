@@ -17,8 +17,8 @@ com.example.artesaniasaleo
 │       │                    DetalleConProducto, PedidoConDetalles, UsuarioConPerfil
 │       ├── dao/          ✅ UsuarioDao, CategoriaDao, ProductoDao, CarritoDao,
 │       │                    FavoritoDao, PedidoDao
-│       ├── database/     ✅ AppDatabase.kt (versión 3; registra entidades y DAOs;
-│       │                    datos semilla: admin, cliente Ana, 4 categorías, 8 productos con stock)
+│       ├── database/     ✅ AppDatabase.kt (versión 4; registra entidades y DAOs;
+│       │                    datos semilla: admin, cliente Ana, 4 categorías, 8 productos con stock y foto)
 │       └── datastore/    ✅ SesionDataStore.kt (guarda quién inició sesión)
 ├── repository/           ✅ UsuarioRepository, CategoriaRepository, ProductoRepository,
 │                            CarritoRepository, FavoritoRepository, PedidoRepository
@@ -136,6 +136,13 @@ Leyenda: ✅ terminado · 🔄 creado, falta validar · ⬜ por hacer
 ## Registro de avances
 
 *(La entrada más reciente va primero. Máximo 5–8 líneas por entrada.)*
+
+### 2026-10-29 — Imágenes de los productos semilla
+**Autor:** Jonas · **Rama:** `feature/imagenes-semilla`
+
+- **Qué:** 8 fotos en `res/drawable-nodpi/producto_N.jpg` y sus filas en `imagen_producto` (`insertarImagenesCatalogo`, BD versión 4). `rutaAUri` distingue `android.resource://` (foto del APK) de una ruta de archivo (foto del admin).
+- **Por qué:** al instalar la app el catálogo ya se ve con fotos, sin que el admin tenga que subirlas.
+- **Conecta con:** `ImagenArtesania` (carga ambos tipos con `contentResolver`), `AdminViewModel.abrirFormProducto` (al editar, la foto semilla se copia a `filesDir/productos` como cualquier otra).
 
 ### 2026-10-29 — Control de stock
 **Autor:** Jonas · **Rama:** `feature/control-stock`

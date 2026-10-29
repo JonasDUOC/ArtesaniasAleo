@@ -37,7 +37,7 @@ import com.example.artesaniasaleo.data.local.entity.Usuario
         Pedido::class,
         PedidoDetalle::class
     ],
-    version = 3, // 2: PerfilUsuario.telefono · 3: Producto.stock
+    version = 4, // 2: PerfilUsuario.telefono · 3: Producto.stock · 4: imágenes semilla
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -90,6 +90,7 @@ abstract class AppDatabase : RoomDatabase() {
             insertarAdmin(db)
             insertarClienteDemo(db)
             insertarCatalogo(db)
+            insertarImagenesCatalogo(db)
         }
 
         // Cuenta de administrador preexistente (id 1)
@@ -141,7 +142,6 @@ abstract class AppDatabase : RoomDatabase() {
 
         // Datos de prueba (sintéticos) para que el catálogo no parta vacío.
         // Los ids se escriben a mano para que cada producto apunte a su categoría.
-        // Sin imágenes por ahora: la tarjeta muestra el degradado provisional.
         // Stock variado para probar: la Cuchara tallada (id 5) parte agotada y la Manta (id 4) con 1.
         private fun insertarCatalogo(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -164,6 +164,29 @@ abstract class AppDatabase : RoomDatabase() {
                 (6, 3, 'Tabla para picar', 'Tabla de raulí curada con aceite de linaza. 40 x 25 cm.', 14500, 'activo', 2),
                 (7, 4, 'Anillo de plata', 'Anillo artesanal en plata 950 con piedra natural.', 15900, 'activo', 2),
                 (8, 4, 'Aros de cobre', 'Aros martillados a mano en cobre con baño de plata.', 9900, 'activo', 6)
+                """
+            )
+        }
+
+        // Fotos de los productos semilla. Los archivos vienen DENTRO del APK, en
+        // res/drawable-nodpi/producto_1.jpg ... producto_8.jpg (nodpi: Android no las reescala).
+        // En la tabla se guarda su Uri "android.resource://paquete/drawable/nombre";
+        // las fotos que agrega el admin, en cambio, se guardan como ruta de archivo (filesDir/productos).
+        // Si falta un archivo, ImagenArtesania muestra el degradado (no se cae).
+        private const val FOTOS_APK = "android.resource://com.example.artesaniasaleo/drawable/"
+
+        private fun insertarImagenesCatalogo(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                INSERT OR IGNORE INTO imagen_producto (id, productoId, url, orden) VALUES
+                (1, 1, '${FOTOS_APK}producto_1', 0),
+                (2, 2, '${FOTOS_APK}producto_2', 0),
+                (3, 3, '${FOTOS_APK}producto_3', 0),
+                (4, 4, '${FOTOS_APK}producto_4', 0),
+                (5, 5, '${FOTOS_APK}producto_5', 0),
+                (6, 6, '${FOTOS_APK}producto_6', 0),
+                (7, 7, '${FOTOS_APK}producto_7', 0),
+                (8, 8, '${FOTOS_APK}producto_8', 0)
                 """
             )
         }
