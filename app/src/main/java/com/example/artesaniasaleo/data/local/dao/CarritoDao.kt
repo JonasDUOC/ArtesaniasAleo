@@ -31,6 +31,10 @@ interface CarritoDao {
     )
     fun observarTotal(usuarioId: Int): Flow<Int>
 
+    // Control de stock: cuántas unidades quedan de un producto (null = el producto no existe)
+    @Query("SELECT stock FROM producto WHERE id = :productoId")
+    suspend fun obtenerStock(productoId: Int): Int?
+
     @Upsert
     suspend fun guardar(item: CarritoItem)
 
